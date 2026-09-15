@@ -571,15 +571,16 @@ departmentInput.addEventListener("change", function() {
   const dept = this.value;
 
   if (dept === "Orthopaedics") {
-  doctorInput.selectedIndex = 1;
+  doctorInput.value = "Dr. Abul Kalam";
 } else if (dept === "General Surgery" ||
            dept === "Laparoscopic & Laser Surgery") {
-  doctorInput.selectedIndex = 2;
+  doctorInput.value = "Dr. (Prof.) Md. Tarique";
 } else if (dept === "Obstetrics & Gynaecology") {
-  doctorInput.selectedIndex = 3;
+  doctorInput.value = "Dr. (Prof.) Hena Farooqui";
 } else {
-  doctorInput.selectedIndex = 0;
-}
+  doctorInput.value = "";
+});
+
 document.getElementById("appointmentForm").addEventListener("submit",function(e){
   e.preventDefault();
   const name=document.getElementById("name").value.trim();
