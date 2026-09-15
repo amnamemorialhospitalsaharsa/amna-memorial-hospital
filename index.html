@@ -497,8 +497,8 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
       <label>Mobile Number / मोबाइल नंबर<input id="mobile" required type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="10 digit mobile number"></label>
       <label>Age / उम्र<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
       <label>Gender / लिंग<select id="gender"><option>Male / पुरुष</option><option>Female / महिला</option><option>Other / अन्य</option></select></label>
-      <label>Department / विभाग<select id="department"><option>General Medicine</option><option>Orthopaedics</option><option>General Surgery</option><option>Laparoscopic &amp; Laser Surgery</option><option>Obstetrics &amp; Gynaecology</option><option>Diagnostics / CT / X-Ray</option><option>Other</option></select></label>
-      <label>Doctor / डॉक्टर<select id="doctor"><option>Dr. Abul Kalam</option><option>Dr. (Prof.) Md. Tarique</option><option>Dr. (Prof.) Hena Farooqui</option><option>Any Available Doctor</option></select></label>
+      <label>Department / विभाग<select id="department"><option value="">Select Department / विभाग चुनें</option><option>Orthopaedics</option><option>General Surgery</option><option>Laparoscopic &amp; Laser Surgery</option><option>Obstetrics &amp; Gynaecology</option></select></label>
+      <label>Doctor / डॉक्टर<select id="doctor"><option value="">Select Doctor / डॉक्टर चुनें</option><option>Dr. Abul Kalam</option><option>Dr. (Prof.) Md. Tarique</option><option>Dr. (Prof.) Hena Farooqui</option><option>Any Available Doctor</option></select></label>
       <label>Preferred Date / पसंदीदा तारीख<input id="date" type="date" required></label>
       <label>Preferred Time / पसंदीदा समय<input id="time" type="time"></label>
       <label class="full">Problem / समस्या<textarea id="problem" placeholder="Briefly describe your problem"></textarea></label>
@@ -570,18 +570,16 @@ const doctorInput = document.getElementById("doctor");
 departmentInput.addEventListener("change", function() {
   const dept = this.value;
 
-  if (dept === "General Medicine") {
-    doctorInput.selectedIndex = 1;
-  } else if (dept === "Orthopaedics") {
-    doctorInput.selectedIndex = 0;
-  } else if (dept === "General Surgery" || dept === "Laparoscopic & Laser Surgery") {
-    doctorInput.selectedIndex = 1;
-  } else if (dept === "Obstetrics & Gynaecology") {
-    doctorInput.selectedIndex = 2;
-  } else {
-    doctorInput.selectedIndex = 3;
-  }
-});
+  if (dept === "Orthopaedics") {
+  doctorInput.selectedIndex = 1;
+} else if (dept === "General Surgery" ||
+           dept === "Laparoscopic & Laser Surgery") {
+  doctorInput.selectedIndex = 2;
+} else if (dept === "Obstetrics & Gynaecology") {
+  doctorInput.selectedIndex = 3;
+} else {
+  doctorInput.selectedIndex = 0;
+}
 document.getElementById("appointmentForm").addEventListener("submit",function(e){
   e.preventDefault();
   const name=document.getElementById("name").value.trim();
