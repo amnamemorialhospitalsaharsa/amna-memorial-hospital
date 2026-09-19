@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07575b">
+<meta name="description" content="WhatsApp Automation V1 — Amna Memorial Hospital, Saharsa. Patient enquiry and appointment workflow.">
+<title>WhatsApp Automation V1 | Amna Memorial Hospital, Saharsa</title>
+<style>
+:root{--p:#0b6b6f;--pd:#07575b;--dark:#12333a;--muted:#65777b;--bg:#f4f8f9;--border:#d8e4e6;--green:#1faa59;--orange:#e8a33a}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--dark);line-height:1.6}
+header{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;padding:18px 16px}.head{max-width:980px;margin:auto;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;background:#fff;border-radius:14px;padding:4px}.logo img{width:100%;height:100%;object-fit:contain;border-radius:10px}.head h1{font-size:20px;margin:0}.head p{font-size:12px;margin:2px 0;opacity:.9}
+main{max-width:980px;margin:auto;padding:18px 14px}.card{background:#fff;border:1px solid #e0eaec;border-radius:20px;padding:22px 18px;box-shadow:0 10px 30px #12333a0d;margin-bottom:16px}h2{color:var(--p);margin:0 0 7px}.intro{color:var(--muted);margin:0 0 18px}.notice{background:#fff7e6;border-left:4px solid var(--orange);padding:12px;border-radius:8px;font-size:13px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.item{border:1px solid var(--border);border-radius:15px;padding:15px;background:#f9fcfc}.item b{display:block;color:var(--p);margin-bottom:5px}.item span{font-size:13px;color:var(--muted)}
+.workflow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.step{border:1px solid var(--border);border-radius:15px;padding:15px;background:#f9fcfc}.step b{display:block;color:var(--p);margin-bottom:5px}.step span{font-size:13px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--border)}th{color:var(--p);background:#f5fbfb}
+.btn{display:inline-flex;padding:12px 16px;border-radius:11px;font-weight:800;text-decoration:none;margin:5px 5px 0 0}.green{background:var(--green);color:#fff}.blue{background:var(--p);color:#fff}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+@media(max-width:700px){.grid,.workflow{grid-template-columns:1fr}.card{padding:19px 15px}table{font-size:12px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo"><img src="hospital-logo.jpg" alt="Amna Memorial Hospital logo"></div><div><h1>Amna Memorial Hospital, Saharsa</h1><p>WhatsApp Automation V1 | WhatsApp ऑटोमेशन</p></div></div></header>
+<main>
+<section class="card">
+<h2>📲 WhatsApp Automation V1</h2>
+<p class="intro">Patient enquiries, appointment requests और registration requests को WhatsApp पर व्यवस्थित करने के लिए workflow.</p>
+<div class="notice"><b>V1 सीमा:</b> अभी website WhatsApp पर pre-filled request भेजती है। यह page अपने-आप WhatsApp messages, reminders या database actions नहीं चलाता। Full automation के लिए WhatsApp Business Platform/API और approved provider/setup की आवश्यकता होगी।</div>
+<a class="btn green" href="https://wa.me/918051246461?text=Namaste%20Amna%20Memorial%20Hospital%2C%20mujhe%20appointment%20ke%20baare%20mein%20jaankari%20chahiye." target="_blank" rel="noopener">📲 Test WhatsApp</a>
+<a class="btn blue" href="index.html#appointment">📅 Appointment</a>
+<a class="btn blue" href="patient-registration.html">📝 Registration</a>
+</section>
+
+<section class="card">
+<h2>🔄 WhatsApp Patient Workflow</h2>
+<div class="workflow">
+<div class="step"><b>1. Enquiry</b><span>Patient website से WhatsApp enquiry शुरू करता है।</span></div>
+<div class="step"><b>2. Details</b><span>Appointment/registration form से आवश्यक जानकारी भेजी जाती है।</span></div>
+<div class="step"><b>3. Reception</b><span>Hospital team request को review और confirm करती है।</span></div>
+<div class="step"><b>4. Follow-up</b><span>आगे की communication hospital team के existing process से होती है।</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>⚙️ V1 में तैयार WhatsApp Workflows</h2>
+<div class="grid">
+<div class="item"><b>Appointment Request</b><span>Patient details + doctor + preferred date/time → WhatsApp.</span></div>
+<div class="item"><b>Patient Registration</b><span>New/Existing patient + UHID + basic details → Reception WhatsApp.</span></div>
+<div class="item"><b>OPD Enquiry</b><span>OPD information और availability पूछने के लिए direct WhatsApp.</span></div>
+<div class="item"><b>Emergency Contact</b><span>Emergency के लिए hospital phone number prominently available.</span></div>
+<div class="item"><b>Doctor Selection</b><span>Current listed doctors के अनुसार request भेजी जा सकती है।</span></div>
+<div class="item"><b>UHID Rule</b><span>Website नया UHID generate नहीं करती; hospital का existing UHID system master है।</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🚀 Future Automation Layer</h2>
+<table>
+<thead><tr><th>Feature</th><th>Purpose</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Auto acknowledgement</td><td>Request receive होने पर confirmation</td><td>Future</td></tr>
+<tr><td>Appointment reminder</td><td>Scheduled visit से पहले reminder</td><td>Future</td></tr>
+<tr><td>OPD timing reply</td><td>Doctor/timing information</td><td>Future</td></tr>
+<tr><td>FAQ replies</td><td>Common patient questions</td><td>Future</td></tr>
+<tr><td>Reception handoff</td><td>Unresolved queries को staff तक भेजना</td><td>Future</td></tr>
+<tr><td>Secure patient data integration</td><td>Hospital system के साथ controlled integration</td><td>Future</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="card">
+<h2>🔐 Patient Data Safety</h2>
+<p>WhatsApp पर केवल आवश्यक information भेजी जाए। Sensitive medical records, reports या अत्यधिक व्यक्तिगत जानकारी को सामान्य chat में अनावश्यक रूप से share न करें। Actual patient record और UHID का authoritative source hospital का existing system रहेगा।</p>
+<a class="btn blue" href="index.html">← Hospital Website</a>
+</section>
+</main>
+<footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
+</body>
+</html>
