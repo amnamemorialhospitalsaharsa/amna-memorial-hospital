@@ -20,6 +20,17 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 <body>
 <header><div class="head"><div class="logo"><img src="hospital-logo.jpg" alt="Amna Memorial Hospital logo"></div><div><h1>Amna Memorial Hospital, Saharsa</h1><p>Admin Panel V1 | प्रशासनिक नियंत्रण</p></div></div></header>
 <main>
+<section id="loginCard" class="card" style="max-width:520px;margin:30px auto">
+<h2>🔐 Admin Login</h2>
+<p class="intro">Authorized hospital administrator login required.</p>
+<form id="adminLoginForm">
+<label>Email<br><input id="adminEmail" type="email" required autocomplete="username" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;margin:6px 0 12px"></label>
+<label>Password<br><input id="adminPassword" type="password" required autocomplete="current-password" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;margin:6px 0 12px"></label>
+<button class="btn blue" type="submit">Login</button>
+<p id="loginStatus" style="font-size:13px;color:var(--muted);margin-top:12px"></p>
+</form>
+</section>
+<div id="adminContent" hidden>
 <section class="card">
 <h2>⚙️ Admin Panel V1</h2>
 <p class="intro">Hospital website की important information को future में mobile से manage करने के लिए proposed admin-control structure.</p>
@@ -83,7 +94,67 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </table>
 <div class="notice"><b>Note:</b> Patient Registration, OPD और UHID workflows को existing hospital system के साथ ही रखा जाएगा। Admin Panel अपने-आप नया UHID generate नहीं करेगा।</div>
 </section>
+</div>
 </main>
 <footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://yqyshtflpihufnolupgw.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X';
+const { createClient } = window.supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+const loginCard = document.getElementById('loginCard');
+const adminContent = document.getElementById('adminContent');
+const loginForm = document.getElementById('adminLoginForm');
+const statusEl = document.getElementById('loginStatus');
+
+function showLogin(message='') {
+  loginCard.hidden = false;
+  adminContent.hidden = true;
+  statusEl.textContent = message;
+}
+function showAdmin(user, profile) {
+  loginCard.innerHTML = '<h2>✅ Admin Login Successful</h2><p class="intro">Welcome, '+(profile.full_name || 'Hospital Admin')+'.</p><p style="font-size:13px;color:var(--muted)">Role: '+profile.role+'</p><button id="logoutBtn" class="btn blue">Logout</button>';
+  adminContent.hidden = false;
+  loginCard.hidden = false;
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    location.reload();
+  });
+}
+
+async function checkAdminSession() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return showLogin();
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('full_name,role,is_active')
+    .eq('id', session.user.id)
+    .maybeSingle();
+  if (error || !profile || profile.role !== 'admin' || profile.is_active !== true) {
+    await supabaseClient.auth.signOut();
+    return showLogin('Admin access is not authorized.');
+  }
+  showAdmin(session.user, profile);
+}
+
+loginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  statusEl.textContent = 'Signing in...';
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    statusEl.textContent = 'Login failed. Please check the email/password.';
+    return;
+  }
+  await checkAdminSession();
+});
+
+checkAdminSession();
+</script>
+
 </body>
 </html>
