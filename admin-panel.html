@@ -115,6 +115,39 @@ function showLogin(message='') {
   adminContent.hidden = true;
   statusEl.textContent = message;
 }
+
+function showRecovery() {
+  adminContent.hidden = true;
+  loginCard.hidden = false;
+  loginCard.innerHTML = `
+    <h2>🔑 Set New Password</h2>
+    <p class="intro">Admin password recovery</p>
+    <form id="recoveryForm">
+      <label>New Password<br><input id="newPassword" type="password" minlength="8" required autocomplete="new-password" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;margin:6px 0 12px"></label>
+      <label>Confirm Password<br><input id="confirmPassword" type="password" minlength="8" required autocomplete="new-password" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;margin:6px 0 12px"></label>
+      <button class="btn green" type="submit">Set New Password</button>
+      <p id="recoveryStatus" style="font-size:13px;color:var(--muted);margin-top:12px"></p>
+    </form>`;
+  document.getElementById('recoveryForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const recoveryStatus = document.getElementById('recoveryStatus');
+    if (newPassword !== confirmPassword) {
+      recoveryStatus.textContent = 'Passwords do not match.';
+      return;
+    }
+    recoveryStatus.textContent = 'Updating password...';
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) {
+      recoveryStatus.textContent = 'Password update failed. Please request a new recovery link.';
+      return;
+    }
+    recoveryStatus.textContent = 'Password updated successfully. You can now login.';
+    setTimeout(() => location.href = location.pathname, 1200);
+  });
+}
+
 function showAdmin(user, profile) {
   loginCard.innerHTML = '<h2>✅ Admin Login Successful</h2><p class="intro">Welcome, '+(profile.full_name || 'Hospital Admin')+'.</p><p style="font-size:13px;color:var(--muted)">Role: '+profile.role+'</p><button id="logoutBtn" class="btn blue">Logout</button>';
   adminContent.hidden = false;
@@ -153,7 +186,15 @@ loginForm.addEventListener('submit', async (event) => {
   await checkAdminSession();
 });
 
-checkAdminSession();
+supabaseClient.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') showRecovery();
+});
+
+if (window.location.hash.includes('type=recovery')) {
+  setTimeout(showRecovery, 100);
+} else {
+  checkAdminSession();
+}
 </script>
 
 </body>
