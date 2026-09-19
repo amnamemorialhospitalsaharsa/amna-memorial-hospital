@@ -211,7 +211,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <nav aria-label="Main navigation">
     <a href="#home">Home</a><a href="#about">About</a><a href="#services">Services</a>
     <a href="#facilities">Facilities</a><a href="#doctors">Doctors</a><a href="#gallery">Photos</a>
-    <a href="#appointment">Appointment</a><a href="#contact">Contact</a>
+    <a href="#appointment">Appointment</a><a href="patient-registration.html">Patient Registration</a><a href="#contact">Contact</a>
   </nav>
 </header>
 
@@ -531,7 +531,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 
 <section id="appointment">
   <h2>📅 Book Appointment | अपॉइंटमेंट</h2>
-  <p class="section-intro">Complete the form. Your appointment request will open in WhatsApp for confirmation.</p>
+  <p class="section-intro">Complete the form. Your appointment request will open in WhatsApp for confirmation.</p><p class="section-intro"><a href="patient-registration.html"><b>📝 Patient Registration | मरीज पंजीकरण →</b></a></p>
   <form id="appointmentForm" novalidate>
     <div class="form-grid">
       <label>Patient Name / मरीज का नाम<input id="name" required autocomplete="name" placeholder="Enter patient name"></label>
@@ -605,24 +605,6 @@ setQR(window.location.href);
 
 const now=new Date();
 dateInput.min=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-const departmentInput = document.getElementById("department");
-const doctorInput = document.getElementById("doctor");
-
-departmentInput.addEventListener("change", function() {
-  const dept = this.value;
-
-  if (dept === "Orthopaedics") {
-  doctorInput.value = "डॉ. अबुल कलाम";
-} else if (dept === "General Surgery" ||
-           dept === "Laparoscopic & Laser Surgery") {
-  doctorInput.value = "डॉ. प्रो0 मो0 तारिक";
-} else if (dept === "Obstetrics & Gynaecology") {
-  doctorInput.value = "डॉ. प्रो0 हिना फारूकी";
-} else {
-  doctorInput.value = "";
-  }
-});
-
 document.getElementById("appointmentForm").addEventListener("submit",function(e){
   e.preventDefault();
   const name=document.getElementById("name").value.trim();
