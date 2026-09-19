@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#07575b">
+<meta name="description" content="Admin Panel V1 planning interface for Amna Memorial Hospital, Saharsa.">
+<title>Admin Panel V1 | Amna Memorial Hospital, Saharsa</title>
+<style>
+:root{--p:#0b6b6f;--pd:#07575b;--dark:#12333a;--muted:#65777b;--bg:#f4f8f9;--border:#d8e4e6;--green:#1faa59;--orange:#e8a33a}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--dark);line-height:1.6}
+header{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;padding:18px 16px}.head{max-width:980px;margin:auto;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;background:#fff;border-radius:14px;padding:4px}.logo img{width:100%;height:100%;object-fit:contain;border-radius:10px}.head h1{font-size:20px;margin:0}.head p{font-size:12px;margin:2px 0;opacity:.9}
+main{max-width:980px;margin:auto;padding:18px 14px}.card{background:#fff;border:1px solid #e0eaec;border-radius:20px;padding:22px 18px;box-shadow:0 10px 30px #12333a0d;margin-bottom:16px}h2{color:var(--p);margin:0 0 7px}.intro{color:var(--muted);margin:0 0 18px}.notice{background:#fff7e6;border-left:4px solid var(--orange);padding:12px;border-radius:8px;font-size:13px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.item{border:1px solid var(--border);border-radius:15px;padding:15px;background:#f9fcfc}.item b{display:block;color:var(--p);margin-bottom:5px}.item span{font-size:13px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--border)}th{color:var(--p);background:#f5fbfb}
+.btn{display:inline-flex;padding:12px 16px;border-radius:11px;font-weight:800;text-decoration:none;margin:5px 5px 0 0}.blue{background:var(--p);color:#fff}.green{background:var(--green);color:#fff}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.card{padding:19px 15px}table{font-size:12px}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo"><img src="hospital-logo.jpg" alt="Amna Memorial Hospital logo"></div><div><h1>Amna Memorial Hospital, Saharsa</h1><p>Admin Panel V1 | प्रशासनिक नियंत्रण</p></div></div></header>
+<main>
+<section class="card">
+<h2>⚙️ Admin Panel V1</h2>
+<p class="intro">Hospital website की important information को future में mobile से manage करने के लिए proposed admin-control structure.</p>
+<div class="notice"><b>Important:</b> यह V1 अभी live editing/database panel नहीं है। Public website से अलग secure admin login, database और server-side authentication अगला technical phase होगा। इस page पर कोई password या patient data store नहीं किया जाता।</div>
+<a class="btn blue" href="index.html">← Hospital Website</a>
+<a class="btn green" href="opd-management.html">🩺 Digital OPD</a>
+</section>
+
+<section class="card">
+<h2>📋 Admin में क्या manage किया जा सकेगा?</h2>
+<div class="grid">
+<div class="item"><b>👨‍⚕️ Doctors</b><span>Doctor name, profile, specialty, OPD timing और availability.</span></div>
+<div class="item"><b>📅 OPD Schedule</b><span>Daily/temporary availability और schedule updates.</span></div>
+<div class="item"><b>🏥 Services</b><span>Hospital services, descriptions और service-page links.</span></div>
+<div class="item"><b>📢 Hospital Updates</b><span>Important notices, announcements और patient information.</span></div>
+<div class="item"><b>📸 Images</b><span>Website gallery और approved hospital images.</span></div>
+<div class="item"><b>📲 WhatsApp Settings</b><span>Approved enquiry/appointment contact number और message templates.</span></div>
+<div class="item"><b>📍 Contact Details</b><span>Address, phone, WhatsApp और map information.</span></div>
+<div class="item"><b>🔗 Website Links</b><span>Navigation और doctor/service page links.</span></div>
+<div class="item"><b>🔐 Access Control</b><span>Authorized hospital staff के लिए secure login/roles.</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🔄 Proposed Admin Workflow</h2>
+<table>
+<thead><tr><th>Step</th><th>Action</th><th>Control</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Secure Login</td><td>Authorized admin only</td></tr>
+<tr><td>2</td><td>Edit Information</td><td>Doctor / OPD / Service / Update</td></tr>
+<tr><td>3</td><td>Review</td><td>Check changes before publishing</td></tr>
+<tr><td>4</td><td>Publish</td><td>Website content update</td></tr>
+<tr><td>5</td><td>Audit / Backup</td><td>Change history and backup</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="card">
+<h2>🔐 Security Rules</h2>
+<div class="grid">
+<div class="item"><b>Admin Login</b><span>Public users को admin controls नहीं दिखेंगे.</span></div>
+<div class="item"><b>Role Based Access</b><span>Admin/reception/editor access अलग रखा जा सकेगा.</span></div>
+<div class="item"><b>Patient Data</b><span>Patient records को public website content से अलग रखा जाएगा.</span></div>
+<div class="item"><b>UHID</b><span>Existing hospital UHID system ही master रहेगा.</span></div>
+<div class="item"><b>Backup</b><span>Published data का controlled backup रखना होगा.</span></div>
+<div class="item"><b>Audit</b><span>Important changes का record रखा जा सकेगा.</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2>🚀 Admin Panel Development Phases</h2>
+<table>
+<thead><tr><th>Phase</th><th>Scope</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>V1</td><td>Structure, modules और workflow</td><td>Current</td></tr>
+<tr><td>V2</td><td>Secure login + database + content editing</td><td>Future</td></tr>
+<tr><td>V3</td><td>Doctor/OPD management + publish controls</td><td>Future</td></tr>
+<tr><td>V4</td><td>WhatsApp integration + analytics + audit</td><td>Future</td></tr>
+<tr><td>V5</td><td>Hospital-wide controlled digital system</td><td>Future</td></tr>
+</tbody>
+</table>
+<div class="notice"><b>Note:</b> Patient Registration, OPD और UHID workflows को existing hospital system के साथ ही रखा जाएगा। Admin Panel अपने-आप नया UHID generate नहीं करेगा।</div>
+</section>
+</main>
+<footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
+</body>
+</html>
