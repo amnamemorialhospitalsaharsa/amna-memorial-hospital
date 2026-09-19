@@ -539,7 +539,6 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
       <label>Age / उम्र<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
       <label>Gender / लिंग<select id="gender"><option>Male / पुरुष</option><option>Female / महिला</option><option>Other / अन्य</option></select></label>
       <label>Patient Type / मरीज का प्रकार<select id="patientType"><option>New Patient / नया मरीज</option><option>Follow-up / पुनः परामर्श</option></select></label>
-      <label>Department / विभाग<select id="department"><option value="">Select Department / विभाग चुनें</option><option>Orthopaedics</option><option>General Surgery</option><option>Laparoscopic &amp; Laser Surgery</option><option>Obstetrics &amp; Gynaecology</option><option>General OPD Consultation</option></select></label>
       <label>Doctor / डॉक्टर<select id="doctor"><option value="">Select Doctor / डॉक्टर चुनें</option><option>डॉ. अबुल कलाम</option><option>डॉ. प्रो0 मो0 तारिक</option><option>डॉ. प्रो0 हिना फारूकी</option><option>Any Available Doctor</option></select></label>
       <label>Preferred Date / पसंदीदा तारीख<input id="date" type="date" required></label>
       <label>Preferred Time / पसंदीदा समय<input id="time" type="time"></label>
@@ -631,7 +630,6 @@ document.getElementById("appointmentForm").addEventListener("submit",function(e)
   const age=document.getElementById("age").value.trim();
   const gender=document.getElementById("gender").value;
   const patientType=document.getElementById("patientType").value;
-  const department=document.getElementById("department").value;
   const doctor=document.getElementById("doctor").value;
   const date=document.getElementById("date").value;
   const time=document.getElementById("time").value;
@@ -650,7 +648,6 @@ document.getElementById("appointmentForm").addEventListener("submit",function(e)
 *Age:* ${age||"Not provided"}
 *Gender:* ${gender}
 *Patient Type:* ${patientType}
-*Department:* ${department}
 *Doctor:* ${doctor}
 *Date:* ${date}
 *Time:* ${time||"Any time"}
