@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07575b">
+<meta name="description" content="Amna Memorial Hospital, Saharsa — Patient Registration Request. Existing hospital UHID remains the master UHID system.">
+<link rel="canonical" href="https://amnamemorialhospitalsaharsa.github.io/amna-memorial-hospital/patient-registration.html">
+<title>Patient Registration | Amna Memorial Hospital, Saharsa</title>
+<style>
+:root{--primary:#0b6b6f;--dark:#12333a;--muted:#65777b;--bg:#f4f8f9;--border:#d8e4e6;--success:#1faa59;--accent:#e8a33a}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--dark);line-height:1.6}
+header{background:linear-gradient(135deg,#07575b,#0b6b6f);color:#fff;padding:18px 16px}
+.header{max-width:900px;margin:auto;display:flex;align-items:center;gap:12px}.logo{width:52px;height:52px;border-radius:14px;background:#fff;padding:4px}.logo img{width:100%;height:100%;object-fit:contain;border-radius:10px}.header h1{font-size:20px;margin:0}.header p{font-size:12px;margin:2px 0;opacity:.9}
+main{max-width:900px;margin:auto;padding:18px 14px}section{background:#fff;border:1px solid #e0eaec;border-radius:20px;padding:22px 18px;box-shadow:0 10px 30px #12333a0d}
+h2{color:var(--primary);margin:0 0 6px}.intro{color:var(--muted);margin:0 0 18px}
+.notice{background:#fff7e6;border-left:4px solid var(--accent);padding:12px;margin:14px 0;border-radius:8px;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}label{display:block;font-size:13px;font-weight:800;margin-top:12px}
+input,select,textarea{width:100%;padding:12px;margin-top:6px;border:1px solid #cbdadd;border-radius:10px;font:inherit;color:var(--dark);background:#fff}textarea{min-height:95px;resize:vertical}.full{grid-column:1/-1}
+.submit{width:100%;margin-top:18px;background:var(--success);color:#fff;border:0;border-radius:11px;padding:14px;font-weight:900;font-size:15px}
+.back{display:inline-block;margin-top:16px;color:var(--primary);font-weight:800;text-decoration:none}
+.uhid-note{background:#e8f7f7;border:1px solid #d3eaea;padding:12px;border-radius:10px;font-size:13px;margin-top:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><div class="header">
+<div class="logo"><img src="hospital-logo.jpg" alt="Amna Memorial Hospital logo"></div>
+<div><h1>Amna Memorial Hospital, Saharsa</h1><p>Patient Registration | मरीज पंजीकरण</p></div>
+</div></header>
+<main>
+<section>
+<h2>📝 Patient Registration Request | मरीज पंजीकरण</h2>
+<p class="intro">Registration details भरें। Request WhatsApp के माध्यम से hospital/reception team को भेजी जाएगी।</p>
+
+<div class="notice"><b>महत्वपूर्ण:</b> Website कोई नया UHID automatically generate नहीं करेगी। Hospital में चल रहा existing UHID system ही master रहेगा। New patient का UHID hospital/reception द्वारा assign किया जाएगा।</div>
+
+<form id="registrationForm" novalidate>
+<div class="grid">
+<label>Patient Type / मरीज का प्रकार
+<select id="patientType"><option value="new">New Patient / नया मरीज</option><option value="existing">Existing Patient / पुराना मरीज</option></select></label>
+
+<label id="uhidWrap" style="display:none">Existing Hospital UHID / मौजूदा UHID
+<input id="uhid" placeholder="Enter existing hospital UHID" autocomplete="off">
+</label>
+
+<label>Patient Name / मरीज का नाम
+<input id="name" required autocomplete="name" placeholder="Enter patient name"></label>
+
+<label>Mobile Number / मोबाइल नंबर
+<input id="mobile" required type="tel" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 digit mobile number"></label>
+
+<label>Age / उम्र
+<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
+
+<label>Gender / लिंग
+<select id="gender"><option>Male / पुरुष</option><option>Female / महिला</option><option>Other / अन्य</option></select></label>
+
+<label>Doctor / डॉक्टर
+<select id="doctor"><option value="">Select Doctor / डॉक्टर चुनें</option><option>डॉ. अबुल कलाम</option><option>डॉ. प्रो0 मो0 तारिक</option><option>डॉ. प्रो0 हिना फारूकी</option><option>Any Available Doctor</option></select></label>
+
+<label>Preferred Date / पसंदीदा तारीख
+<input id="date" type="date"></label>
+
+<label>Preferred Time / पसंदीदा समय
+<input id="time" type="time"></label>
+
+<label class="full">Address / पता
+<textarea id="address" placeholder="Patient address"></textarea></label>
+
+<label class="full">Problem / समस्या
+<textarea id="problem" placeholder="Briefly describe the reason for visit"></textarea></label>
+</div>
+
+<div class="uhid-note">Existing patient: अपना <b>hospital UHID</b> दर्ज करें।<br>New patient: UHID यहाँ generate नहीं होगा; registration के बाद hospital/reception existing system के अनुसार UHID assign करेगा.</div>
+<button class="submit" type="submit">📲 Send Registration Request on WhatsApp</button>
+</form>
+
+<a class="back" href="index.html">← Back to Hospital Website</a>
+</section>
+</main>
+<footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
+
+<script>
+const WHATSAPP="918051246461";
+const type=document.getElementById("patientType");
+const uhidWrap=document.getElementById("uhidWrap");
+const uhid=document.getElementById("uhid");
+const date=document.getElementById("date");
+
+function updateUHID(){
+  const existing=type.value==="existing";
+  uhidWrap.style.display=existing?"block":"none";
+  uhid.required=existing;
+  if(!existing) uhid.value="";
+}
+type.addEventListener("change",updateUHID); updateUHID();
+
+const now=new Date();
+date.min=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+
+document.getElementById("registrationForm").addEventListener("submit",function(e){
+ e.preventDefault();
+ const name=document.getElementById("name").value.trim();
+ const mobile=document.getElementById("mobile").value.trim();
+ const age=document.getElementById("age").value.trim();
+ const gender=document.getElementById("gender").value;
+ const doctor=document.getElementById("doctor").value;
+ const dateVal=date.value;
+ const time=document.getElementById("time").value;
+ const address=document.getElementById("address").value.trim();
+ const problem=document.getElementById("problem").value.trim();
+
+ if(!name){alert("Please enter the patient's name.");return}
+ if(!/^[0-9]{10}$/.test(mobile)){alert("Please enter a valid 10-digit mobile number.");return}
+ if(type.value==="existing" && !uhid.value.trim()){alert("Please enter the existing hospital UHID.");return}
+
+ const message=`*Patient Registration Request*
+
+*Amna Memorial Hospital*
+
+*Patient Type:* ${type.value==="existing"?"Existing Patient / पुराना मरीज":"New Patient / नया मरीज"}
+*Hospital UHID:* ${type.value==="existing"?uhid.value.trim():"To be assigned by hospital"}
+*Patient:* ${name}
+*Mobile:* ${mobile}
+*Age:* ${age||"Not provided"}
+*Gender:* ${gender}
+*Doctor:* ${doctor||"Not selected"}
+*Preferred Date:* ${dateVal||"Not provided"}
+*Preferred Time:* ${time||"Any time"}
+*Address:* ${address||"Not provided"}
+*Problem:* ${problem||"Not provided"}
+
+_Please process this registration request. Final registration/UHID will be handled by the hospital._`;
+
+ window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(message),"_blank","noopener");
+});
+</script>
+</body>
+</html>
