@@ -441,9 +441,9 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 
     <div class="doctor">
       <div class="doctor-photo real">
-        <img src="dr-abul-kalam.jpeg" alt="Dr. Abul Kalam">
+        <img src="dr-abul-kalam.jpeg" alt="डॉ. अबुल कलाम">
       </div>
-      <h3>Dr. Abul Kalam</h3>
+      <h3>डॉ. अबुल कलाम</h3>
       <p>MBBS, D.Ortho<br>Orthopaedic Surgeon</p>
       <p>OPD Timing: 4:00 PM – 7:00 PM</p>
     </div>
@@ -522,7 +522,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
       <label>Age / उम्र<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
       <label>Gender / लिंग<select id="gender"><option>Male / पुरुष</option><option>Female / महिला</option><option>Other / अन्य</option></select></label>
       <label>Department / विभाग<select id="department"><option value="">Select Department / विभाग चुनें</option><option>Orthopaedics</option><option>General Surgery</option><option>Laparoscopic &amp; Laser Surgery</option><option>Obstetrics &amp; Gynaecology</option></select></label>
-      <label>Doctor / डॉक्टर<select id="doctor"><option value="">Select Doctor / डॉक्टर चुनें</option><option>Dr. Abul Kalam</option><option>Dr. (Prof.) Md. Tarique</option><option>डॉ. प्रो0 हिना फारूकी</option><option>Any Available Doctor</option></select></label>
+      <label>Doctor / डॉक्टर<select id="doctor"><option value="">Select Doctor / डॉक्टर चुनें</option><option>डॉ. अबुल कलाम</option><option>Dr. (Prof.) Md. Tarique</option><option>डॉ. प्रो0 हिना फारूकी</option><option>Any Available Doctor</option></select></label>
       <label>Preferred Date / पसंदीदा तारीख<input id="date" type="date" required></label>
       <label>Preferred Time / पसंदीदा समय<input id="time" type="time"></label>
       <label class="full">Problem / समस्या<textarea id="problem" placeholder="Briefly describe your problem"></textarea></label>
@@ -595,7 +595,7 @@ departmentInput.addEventListener("change", function() {
   const dept = this.value;
 
   if (dept === "Orthopaedics") {
-  doctorInput.value = "Dr. Abul Kalam";
+  doctorInput.value = "डॉ. अबुल कलाम";
 } else if (dept === "General Surgery" ||
            dept === "Laparoscopic & Laser Surgery") {
   doctorInput.value = "Dr. (Prof.) Md. Tarique";
