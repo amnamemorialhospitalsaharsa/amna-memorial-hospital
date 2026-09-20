@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#07575b">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#07575b">
 <title>Admin Panel V2 | Amna Memorial Hospital, Saharsa</title>
 <style>
 :root{--p:#0b6b6f;--pd:#07575b;--dark:#12333a;--muted:#65777b;--bg:#f4f8f9;--border:#d8e4e6;--green:#1faa59;--red:#c94b4b}
@@ -16,196 +14,54 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 #app{display:none}.topbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.role{font-size:12px;background:#eaf7ed;padding:5px 8px;border-radius:8px;color:#18743e}
 .hidden{display:none!important}.status{font-size:13px;margin-top:8px;color:var(--muted)}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+.roadmap-summary{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin:12px 0}.roadmap-stat{background:#f7fbfb;border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}.roadmap-stat b{display:block;font-size:20px;color:var(--p)}.roadmap-stat span{font-size:11px;color:var(--muted)}.roadmap-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:9px;margin:12px 0}.roadmap-phase{border:1px solid var(--border);border-radius:14px;margin:12px 0;overflow:hidden;background:#fff}.roadmap-phase-head{padding:12px;background:#f5fbfb;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.roadmap-phase-title{font-weight:700;color:var(--dark)}.roadmap-phase-meta{font-size:12px;color:var(--muted)}.roadmap-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}.rb-completed{background:#e7f7ed;color:#18743e}.rb-running{background:#e7f1ff;color:#1559a6}.rb-to-be{background:#fff7df;color:#946c00}.rb-rework{background:#fdeaea;color:#a12626}.rb-on-hold{background:#eef0f1;color:#5b666a}.roadmap-task-details{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}.roadmap-criteria{font-size:12px;color:#31484d;background:#f8fbfb;border-left:3px solid var(--p);padding:7px;margin-top:6px;border-radius:4px}.roadmap-status-select{width:auto;min-width:112px;margin:0;padding:6px 8px;font-size:12px}.roadmap-empty{padding:20px;text-align:center;color:var(--muted)}.roadmap-last{font-size:11px;color:var(--muted);margin-top:8px}
+@media(max-width:800px){.roadmap-summary{grid-template-columns:repeat(3,1fr)}.roadmap-toolbar{grid-template-columns:1fr}.roadmap-phase-head{align-items:flex-start}.roadmap-status-select{min-width:100px}}
 @media(max-width:700px){.formgrid{grid-template-columns:1fr}main{padding:11px}.card{padding:15px}table{font-size:12px}}
-</style>
-</head>
+@media(max-width:430px){.roadmap-summary{grid-template-columns:repeat(2,1fr)}}
+</style></head>
 <body>
 <header><div class="head"><div class="logo"><img src="hospital-logo.jpg" alt="Amna Memorial Hospital logo"></div><div><h1>Amna Memorial Hospital, Saharsa</h1><p>Admin Panel V2 | Secure Content Management</p></div></div></header>
 <main>
-<section id="loginCard" class="card" style="max-width:520px;margin:28px auto">
-<h2>🔐 Admin Login</h2><p class="muted">Authorized hospital administrator/staff only.</p>
-<form id="loginForm">
-<label>Email<input id="email" type="email" required autocomplete="username"></label>
-<label>Password<input id="password" type="password" required autocomplete="current-password"></label>
-<div class="actions"><button class="btn primary" type="submit">Login</button></div>
-<div id="loginStatus" class="status"></div>
-</form>
-</section>
-
+<section id="loginCard" class="card" style="max-width:520px;margin:28px auto"><h2>🔐 Admin Login</h2><p class="muted">Authorized hospital administrator/staff only.</p><form id="loginForm"><label>Email<input id="email" type="email" required autocomplete="username"></label><label>Password<input id="password" type="password" required autocomplete="current-password"></label><div class="actions"><button class="btn primary" type="submit">Login</button></div><div id="loginStatus" class="status"></div></form></section>
 <section id="app">
-<div class="card"><div class="topbar"><div><h2>⚙️ Admin Panel V2</h2><div class="muted">Secure database-backed management for approved hospital website content.</div></div><div><span id="roleBadge" class="role"></span><button id="logout" class="btn light">Logout</button></div></div>
-<div class="notice"><b>Patient-data boundary:</b> यह panel patient medical records या automatic UHID generation के लिए नहीं है। Existing hospital UHID system authoritative रहेगा.</div></div>
-
-<div class="tabs">
-<button class="btn tab active" data-tab="doctors">👨‍⚕️ Doctors</button>
-<button class="btn tab" data-tab="opd">📅 OPD</button>
-<button class="btn tab" data-tab="services">🏥 Services</button>
-<button class="btn tab" data-tab="updates">📢 Updates</button>
-<button class="btn tab" data-tab="whatsapp">📲 WhatsApp</button>
-</div>
-
-<section id="doctors" class="module card">
-<h2>👨‍⚕️ Doctors</h2><p class="muted">Admin-only. Existing hospital doctor information can be maintained here.</p>
-<form id="doctorForm" class="formgrid">
-<input type="hidden" id="doctorId">
-<label>Name (Hindi)<input id="doctorNameHi" required></label>
-<label>Name (English)<input id="doctorNameEn"></label>
-<label>Qualification<input id="doctorQualification"></label>
-<label>Specialty (Hindi)<input id="doctorSpecialtyHi"></label>
-<label>Specialty (English)<input id="doctorSpecialtyEn"></label>
-<label>OPD Time<input id="doctorOpd"></label>
-<label>Profile Slug<input id="doctorSlug"></label>
-<label>Sort Order<input id="doctorSort" type="number" value="0"></label>
-<div><label><input id="doctorSunday" type="checkbox" style="width:auto"> Sunday off</label><br><label><input id="doctorPublished" type="checkbox" checked style="width:auto"> Published</label></div>
-<div class="actions"><button class="btn green" type="submit">Save Doctor</button><button class="btn light" type="button" onclick="clearDoctor()">Clear</button></div>
-</form><div id="doctorStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Doctor</th><th>OPD</th><th>Published</th><th>Action</th></tr></thead><tbody id="doctorRows"></tbody></table></div>
-</section>
-
-<section id="opd" class="module card hidden">
-<h2>📅 OPD Schedule</h2><p class="muted">Admin/Reception. Daily availability and joint-injection status.</p>
-<form id="opdForm" class="formgrid">
-<input type="hidden" id="opdId">
-<label>Doctor<select id="opdDoctor" required></select></label>
-<label>Date<input id="opdDate" type="date" required></label>
-<label>Status<select id="opdStatus"><option value="available">Available</option><option value="unavailable">Unavailable</option></select></label>
-<label>Joint Injection<select id="jointInjection"><option value="not_specified">Not specified</option><option value="given">Given</option><option value="not_given">Not given</option></select></label>
-<label style="grid-column:1/-1">Note<textarea id="opdNote"></textarea></label>
-<div><label><input id="opdPublished" type="checkbox" checked style="width:auto"> Published</label></div>
-<div class="actions"><button class="btn green" type="submit">Save OPD</button><button class="btn light" type="button" onclick="clearOpd()">Clear</button></div>
-</form><div id="opdStatusMsg" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Doctor</th><th>Status</th><th>Injection</th><th>Action</th></tr></thead><tbody id="opdRows"></tbody></table></div>
-</section>
-
-<section id="services" class="module card hidden">
-<h2>🏥 Services</h2><p class="muted">Admin/Editor. Service descriptions and publication status.</p>
-<form id="serviceForm" class="formgrid">
-<input type="hidden" id="serviceId">
-<label>Title (Hindi)<input id="serviceHi" required></label><label>Title (English)<input id="serviceEn"></label>
-<label>Page Slug<input id="serviceSlug"></label><label>Sort Order<input id="serviceSort" type="number" value="0"></label>
-<label style="grid-column:1/-1">Short Description<textarea id="serviceDesc"></textarea></label>
-<div><label><input id="servicePublished" type="checkbox" checked style="width:auto"> Published</label></div>
-<div class="actions"><button class="btn green" type="submit">Save Service</button><button class="btn light" type="button" onclick="clearService()">Clear</button></div>
-</form><div id="serviceStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Service</th><th>Slug</th><th>Published</th><th>Action</th></tr></thead><tbody id="serviceRows"></tbody></table></div>
-</section>
-
-<section id="updates" class="module card hidden">
-<h2>📢 Hospital Updates</h2><p class="muted">Admin/Editor. Draft and publish hospital notices.</p>
-<form id="updateForm" class="formgrid">
-<input type="hidden" id="updateId">
-<label>Title (Hindi)<input id="updateHi" required></label><label>Title (English)<input id="updateEn"></label>
-<label>Publish Date<input id="updateDate" type="date"></label><label><input id="updatePublished" type="checkbox" style="width:auto"> Published</label>
-<label style="grid-column:1/-1">Body (Hindi)<textarea id="updateBodyHi"></textarea></label>
-<label style="grid-column:1/-1">Body (English)<textarea id="updateBodyEn"></textarea></label>
-<div class="actions"><button class="btn green" type="submit">Save Update</button><button class="btn light" type="button" onclick="clearUpdate()">Clear</button></div>
-</form><div id="updateStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Title</th><th>Date</th><th>Published</th><th>Action</th></tr></thead><tbody id="updateRows"></tbody></table></div>
-</section>
-
-<section id="whatsapp" class="module card hidden">
-<h2>📲 WhatsApp Settings</h2><p class="muted">Admin-only. Approved contact numbers/templates.</p>
-<form id="waForm">
-<div class="formgrid"><label>Appointment Number<input id="waAppointment"></label><label>Emergency Number<input id="waEmergency"></label><label>General Number<input id="waGeneral"></label><label>Appointment Template<textarea id="waAppointmentTemplate"></textarea></label><label>Registration Template<textarea id="waRegistrationTemplate"></textarea></label></div>
-<div class="actions"><button class="btn green" type="submit">Save WhatsApp Settings</button></div>
-</form><div id="waStatus" class="status"></div>
-</section>
-
+<div class="card"><div class="topbar"><div><h2>⚙️ Admin Panel V2</h2><div class="muted">Secure database-backed management for approved hospital website content.</div></div><div><span id="roleBadge" class="role"></span><button id="logout" class="btn light">Logout</button></div></div><div class="notice"><b>Patient-data boundary:</b> यह panel patient medical records या automatic UHID generation के लिए नहीं है। Existing hospital UHID system authoritative रहेगा.</div></div>
+<div class="tabs"><button class="btn tab active" data-tab="doctors">👨‍⚕️ Doctors</button><button class="btn tab" data-tab="opd">📅 OPD</button><button class="btn tab" data-tab="services">🏥 Services</button><button class="btn tab" data-tab="updates">📢 Updates</button><button class="btn tab" data-tab="whatsapp">📲 WhatsApp</button><button class="btn tab" data-tab="roadmap">📊 Roadmap</button></div>
+<section id="doctors" class="module card"><h2>👨‍⚕️ Doctors</h2><p class="muted">Admin-only. Existing hospital doctor information can be maintained here.</p><form id="doctorForm" class="formgrid"><input type="hidden" id="doctorId"><label>Name (Hindi)<input id="doctorNameHi" required></label><label>Name (English)<input id="doctorNameEn"></label><label>Qualification<input id="doctorQualification"></label><label>Specialty (Hindi)<input id="doctorSpecialtyHi"></label><label>Specialty (English)<input id="doctorSpecialtyEn"></label><label>OPD Time<input id="doctorOpd"></label><label>Profile Slug<input id="doctorSlug"></label><label>Sort Order<input id="doctorSort" type="number" value="0"></label><div><label><input id="doctorSunday" type="checkbox" style="width:auto"> Sunday off</label><br><label><input id="doctorPublished" type="checkbox" checked style="width:auto"> Published</label></div><div class="actions"><button class="btn green" type="submit">Save Doctor</button><button class="btn light" type="button" onclick="clearDoctor()">Clear</button></div></form><div id="doctorStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Doctor</th><th>OPD</th><th>Published</th><th>Action</th></tr></thead><tbody id="doctorRows"></tbody></table></div></section>
+<section id="opd" class="module card hidden"><h2>📅 OPD Schedule</h2><p class="muted">Admin/Reception. Daily availability and joint-injection status.</p><form id="opdForm" class="formgrid"><input type="hidden" id="opdId"><label>Doctor<select id="opdDoctor" required></select></label><label>Date<input id="opdDate" type="date" required></label><label>Status<select id="opdStatus"><option value="available">Available</option><option value="unavailable">Unavailable</option></select></label><label>Joint Injection<select id="jointInjection"><option value="not_specified">Not specified</option><option value="given">Given</option><option value="not_given">Not given</option></select></label><label style="grid-column:1/-1">Note<textarea id="opdNote"></textarea></label><div><label><input id="opdPublished" type="checkbox" checked style="width:auto"> Published</label></div><div class="actions"><button class="btn green" type="submit">Save OPD</button><button class="btn light" type="button" onclick="clearOpd()">Clear</button></div></form><div id="opdStatusMsg" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Doctor</th><th>Status</th><th>Injection</th><th>Action</th></tr></thead><tbody id="opdRows"></tbody></table></div></section>
+<section id="services" class="module card hidden"><h2>🏥 Services</h2><p class="muted">Admin/Editor. Service descriptions and publication status.</p><form id="serviceForm" class="formgrid"><input type="hidden" id="serviceId"><label>Title (Hindi)<input id="serviceHi" required></label><label>Title (English)<input id="serviceEn"></label><label>Page Slug<input id="serviceSlug"></label><label>Sort Order<input id="serviceSort" type="number" value="0"></label><label style="grid-column:1/-1">Short Description<textarea id="serviceDesc"></textarea></label><div><label><input id="servicePublished" type="checkbox" checked style="width:auto"> Published</label></div><div class="actions"><button class="btn green" type="submit">Save Service</button><button class="btn light" type="button" onclick="clearService()">Clear</button></div></form><div id="serviceStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Service</th><th>Slug</th><th>Published</th><th>Action</th></tr></thead><tbody id="serviceRows"></tbody></table></div></section>
+<section id="updates" class="module card hidden"><h2>📢 Hospital Updates</h2><p class="muted">Admin/Editor. Draft and publish hospital notices.</p><form id="updateForm" class="formgrid"><input type="hidden" id="updateId"><label>Title (Hindi)<input id="updateHi" required></label><label>Title (English)<input id="updateEn"></label><label>Publish Date<input id="updateDate" type="date"></label><label><input id="updatePublished" type="checkbox" style="width:auto"> Published</label><label style="grid-column:1/-1">Body (Hindi)<textarea id="updateBodyHi"></textarea></label><label style="grid-column:1/-1">Body (English)<textarea id="updateBodyEn"></textarea></label><div class="actions"><button class="btn green" type="submit">Save Update</button><button class="btn light" type="button" onclick="clearUpdate()">Clear</button></div></form><div id="updateStatus" class="status"></div><div style="overflow:auto"><table><thead><tr><th>Title</th><th>Date</th><th>Published</th><th>Action</th></tr></thead><tbody id="updateRows"></tbody></table></div></section>
+<section id="whatsapp" class="module card hidden"><h2>📲 WhatsApp Settings</h2><p class="muted">Admin-only. Approved contact numbers/templates.</p><form id="waForm"><div class="formgrid"><label>Appointment Number<input id="waAppointment"></label><label>Emergency Number<input id="waEmergency"></label><label>General Number<input id="waGeneral"></label><label>Appointment Template<textarea id="waAppointmentTemplate"></textarea></label><label>Registration Template<textarea id="waRegistrationTemplate"></textarea></label></div><div class="actions"><button class="btn green" type="submit">Save WhatsApp Settings</button></div></form><div id="waStatus" class="status"></div></section>
+<section id="roadmap" class="module card hidden"><div class="topbar"><div><h2>📊 18-Month Digital Roadmap</h2><div class="muted">Date-wise master plan • 20 Sep 2026 – 31 Mar 2028</div></div><button class="btn light" type="button" onclick="loadRoadmap()">↻ Refresh</button></div><div class="roadmap-summary" id="roadmapSummary"></div><div class="roadmap-toolbar"><input id="roadmapSearch" placeholder="Search task, phase or details…"><select id="roadmapPhaseFilter"><option value="">All phases</option></select><select id="roadmapStatusFilter"><option value="">All statuses</option><option value="COMPLETED">COMPLETED</option><option value="RUNNING">RUNNING</option><option value="TO BE">TO BE</option><option value="REWORK">REWORK</option><option value="ON HOLD">ON HOLD</option></select></div><div id="roadmapRows"></div><div id="roadmapStatus" class="status"></div><div class="roadmap-last" id="roadmapLast"></div></section>
 <section class="card"><h2>🛡️ Security</h2><p class="muted">Authentication is handled by Supabase. Database access is protected with Row Level Security and role-based policies. Important admin changes can be recorded in the audit log.</p></section>
-</section>
-</main>
-<footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
-
+</section></main><footer>Amna Memorial Hospital, Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar<br>WhatsApp: +91 80512 46461</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL='https://yqyshtflpihufnolupgw.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY='sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X';
-const {createClient}=window.supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-let currentRole='', doctors=[], services=[];
-
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-async function profile(){
- const {data:{session}}=await sb.auth.getSession(); if(!session)return null;
- const {data,error}=await sb.from('profiles').select('full_name,role,is_active').eq('id',session.user.id).maybeSingle();
- if(error||!data||!data.is_active)return null; return {session,profile:data};
-}
-async function audit(action,type,id,details={}){
- const {data:{session}}=await sb.auth.getSession(); if(!session)return;
- await sb.from('audit_log').insert({actor_id:session.user.id,action,entity_type:type,entity_id:id?String(id):null,details});
-}
+const SUPABASE_URL='https://yqyshtflpihufnolupgw.supabase.co';const SUPABASE_PUBLISHABLE_KEY='sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X';const {createClient}=window.supabase;const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);let currentRole='',doctors=[],services=[],roadmapPhases=[],roadmapTasks=[];const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function profile(){const {data:{session}}=await sb.auth.getSession();if(!session)return null;const {data,error}=await sb.from('profiles').select('full_name,role,is_active').eq('id',session.user.id).maybeSingle();if(error||!data||!data.is_active)return null;return {session,profile:data}}
+async function audit(action,type,id,details={}){const {data:{session}}=await sb.auth.getSession();if(!session)return;await sb.from('audit_log').insert({actor_id:session.user.id,action,entity_type:type,entity_id:id?String(id):null,details})}
 function can(role,allowed){return allowed.includes(role)}
-function showModule(name){
- document.querySelectorAll('.module').forEach(x=>x.classList.toggle('hidden',x.id!==name));
- document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));
-}
+function showModule(name){document.querySelectorAll('.module').forEach(x=>x.classList.toggle('hidden',x.id!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===name));if(name==='roadmap'&&currentRole==='admin')loadRoadmap()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showModule(b.dataset.tab));
-
-async function loadDoctors(){
- const {data,error}=await sb.from('doctors').select('*').order('sort_order');
- if(error){$('doctorStatus').textContent=error.message;return} doctors=data||[];
- $('doctorRows').innerHTML=doctors.map(d=>'<tr><td><b>'+esc(d.name_hi)+'</b><br><span class="muted">'+esc(d.specialty_en||'')+'</span></td><td>'+esc(d.opd_time)+'</td><td>'+ (d.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editDoctor('+d.id+')">Edit</button></td></tr>').join('');
- $('opdDoctor').innerHTML=doctors.map(d=>'<option value="'+d.id+'">'+esc(d.name_hi)+'</option>').join('');
-}
-window.editDoctor=id=>{const d=doctors.find(x=>x.id===id);if(!d)return;$('doctorId').value=d.id;$('doctorNameHi').value=d.name_hi;$('doctorNameEn').value=d.name_en||'';$('doctorQualification').value=d.qualification||'';$('doctorSpecialtyHi').value=d.specialty_hi||'';$('doctorSpecialtyEn').value=d.specialty_en||'';$('doctorOpd').value=d.opd_time||'';$('doctorSlug').value=d.profile_slug||'';$('doctorSort').value=d.sort_order||0;$('doctorSunday').checked=d.sunday_off;$('doctorPublished').checked=d.is_published;scrollTo(0,0)};
-window.clearDoctor=()=>{ $('doctorForm').reset();$('doctorId').value='';$('doctorPublished').checked=true };
-$('doctorForm').onsubmit=async e=>{e.preventDefault();if(currentRole!=='admin')return;
- const id=$('doctorId').value;const payload={name_hi:$('doctorNameHi').value,name_en:$('doctorNameEn').value,qualification:$('doctorQualification').value,specialty_hi:$('doctorSpecialtyHi').value,specialty_en:$('doctorSpecialtyEn').value,opd_time:$('doctorOpd').value,profile_slug:$('doctorSlug').value,sort_order:+$('doctorSort').value||0,sunday_off:$('doctorSunday').checked,is_published:$('doctorPublished').checked,updated_at:new Date().toISOString()};
- let res=id?await sb.from('doctors').update(payload).eq('id',id):await sb.from('doctors').insert(payload);
- $('doctorStatus').textContent=res.error?res.error.message:'Doctor saved successfully.';if(!res.error){await audit(id?'update':'create','doctor',id||null,{name_hi:payload.name_hi});clearDoctor();await loadDoctors();}
-};
-
-async function loadServices(){
- const {data,error}=await sb.from('services').select('*').order('sort_order');if(error){$('serviceStatus').textContent=error.message;return}services=data||[];
- $('serviceRows').innerHTML=services.map(s=>'<tr><td><b>'+esc(s.title_hi)+'</b><br><span class="muted">'+esc(s.title_en||'')+'</span></td><td>'+esc(s.page_slug)+'</td><td>'+ (s.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editService('+s.id+')">Edit</button></td></tr>').join('');
-}
-window.editService=id=>{const s=services.find(x=>x.id===id);if(!s)return;$('serviceId').value=s.id;$('serviceHi').value=s.title_hi;$('serviceEn').value=s.title_en||'';$('serviceSlug').value=s.page_slug||'';$('serviceSort').value=s.sort_order||0;$('serviceDesc').value=s.short_description||'';$('servicePublished').checked=s.is_published};
-window.clearService=()=>{$('serviceForm').reset();$('serviceId').value='';$('servicePublished').checked=true};
-$('serviceForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','editor']))return;
- const id=$('serviceId').value;const payload={title_hi:$('serviceHi').value,title_en:$('serviceEn').value,page_slug:$('serviceSlug').value,sort_order:+$('serviceSort').value||0,short_description:$('serviceDesc').value,is_published:$('servicePublished').checked,updated_at:new Date().toISOString()};
- const res=id?await sb.from('services').update(payload).eq('id',id):await sb.from('services').insert(payload);$('serviceStatus').textContent=res.error?res.error.message:'Service saved successfully.';if(!res.error){await audit(id?'update':'create','service',id||null,{title_hi:payload.title_hi});clearService();await loadServices();}
-};
-
-async function loadOpd(){
- const {data,error}=await sb.from('opd_schedule').select('*, doctors(name_hi)').order('schedule_date',{ascending:false}).limit(100);if(error){$('opdStatusMsg').textContent=error.message;return}
- $('opdRows').innerHTML=(data||[]).map(o=>'<tr><td>'+esc(o.schedule_date)+'</td><td>'+esc(o.doctors?.name_hi||'')+'</td><td>'+esc(o.status)+'</td><td>'+esc(o.joint_injection||'')+'</td><td><button class="btn light" onclick="editOpd('+o.id+')">Edit</button></td></tr>').join('');
- window.opdData=data||[];
-}
-window.editOpd=id=>{const o=window.opdData.find(x=>x.id===id);if(!o)return;$('opdId').value=o.id;$('opdDoctor').value=o.doctor_id;$('opdDate').value=o.schedule_date;$('opdStatus').value=o.status;$('jointInjection').value=o.joint_injection||'not_specified';$('opdNote').value=o.note||'';$('opdPublished').checked=o.is_published};
-window.clearOpd=()=>{$('opdForm').reset();$('opdId').value='';$('opdPublished').checked=true};
-$('opdForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','reception']))return;
- const id=$('opdId').value;const payload={doctor_id:+$('opdDoctor').value,schedule_date:$('opdDate').value,status:$('opdStatus').value,joint_injection:$('jointInjection').value,note:$('opdNote').value,is_published:$('opdPublished').checked,updated_at:new Date().toISOString()};
- const res=id?await sb.from('opd_schedule').update(payload).eq('id',id):await sb.from('opd_schedule').insert(payload);$('opdStatusMsg').textContent=res.error?res.error.message:'OPD schedule saved successfully.';if(!res.error){await audit(id?'update':'create','opd_schedule',id||null,payload);clearOpd();await loadOpd();}
-};
-
-async function loadUpdates(){
- const {data,error}=await sb.from('hospital_updates').select('*').order('created_at',{ascending:false});if(error){$('updateStatus').textContent=error.message;return}window.updateData=data||[];
- $('updateRows').innerHTML=window.updateData.map(u=>'<tr><td><b>'+esc(u.title_hi)+'</b></td><td>'+esc(u.publish_date||'')+'</td><td>'+ (u.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editUpdate('+u.id+')">Edit</button></td></tr>').join('');
-}
-window.editUpdate=id=>{const u=window.updateData.find(x=>x.id===id);if(!u)return;$('updateId').value=u.id;$('updateHi').value=u.title_hi;$('updateEn').value=u.title_en||'';$('updateDate').value=u.publish_date||'';$('updatePublished').checked=u.is_published;$('updateBodyHi').value=u.body_hi||'';$('updateBodyEn').value=u.body_en||''};
-window.clearUpdate=()=>{$('updateForm').reset();$('updateId').value=''};
-$('updateForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','editor']))return;
- const id=$('updateId').value;const payload={title_hi:$('updateHi').value,title_en:$('updateEn').value,publish_date:$('updateDate').value||null,is_published:$('updatePublished').checked,body_hi:$('updateBodyHi').value,body_en:$('updateBodyEn').value,updated_at:new Date().toISOString()};
- const res=id?await sb.from('hospital_updates').update(payload).eq('id',id):await sb.from('hospital_updates').insert(payload);$('updateStatus').textContent=res.error?res.error.message:'Update saved successfully.';if(!res.error){await audit(id?'update':'create','hospital_update',id||null,{title_hi:payload.title_hi});clearUpdate();await loadUpdates();}
-};
-
-async function loadWhatsapp(){
- const {data,error}=await sb.from('whatsapp_settings').select('*').limit(1).maybeSingle();if(error){$('waStatus').textContent=error.message;return}if(data){$('waAppointment').value=data.appointment_number||'';$('waEmergency').value=data.emergency_number||'';$('waGeneral').value=data.general_number||'';$('waAppointmentTemplate').value=data.appointment_template||'';$('waRegistrationTemplate').value=data.registration_template||''}window.waId=data?.id||null;
-}
-$('waForm').onsubmit=async e=>{e.preventDefault();if(currentRole!=='admin')return;
- const payload={appointment_number:$('waAppointment').value,emergency_number:$('waEmergency').value,general_number:$('waGeneral').value,appointment_template:$('waAppointmentTemplate').value,registration_template:$('waRegistrationTemplate').value,updated_at:new Date().toISOString()};
- const res=window.waId?await sb.from('whatsapp_settings').update(payload).eq('id',window.waId):await sb.from('whatsapp_settings').insert(payload);$('waStatus').textContent=res.error?res.error.message:'WhatsApp settings saved.';if(!res.error)await audit('update','whatsapp_settings',window.waId,payload);
-};
-
-async function start(){
- const p=await profile();if(!p){$('loginCard').style.display='block';return}
- currentRole=p.profile.role; $('loginCard').style.display='none';$('app').style.display='block';$('roleBadge').textContent='Role: '+currentRole;
- if(!can(currentRole,['admin'])){document.querySelector('[data-tab="doctors"]').classList.add('hidden');document.querySelector('[data-tab="whatsapp"]').classList.add('hidden')}
- if(!can(currentRole,['admin','reception']))document.querySelector('[data-tab="opd"]').classList.add('hidden');
- if(!can(currentRole,['admin','editor'])){document.querySelector('[data-tab="services"]').classList.add('hidden');document.querySelector('[data-tab="updates"]').classList.add('hidden')}
- await loadDoctors();await loadServices();await loadOpd();await loadUpdates();if(currentRole==='admin')await loadWhatsapp();
-}
-$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginStatus').textContent='Signing in...';const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){$('loginStatus').textContent='Login failed. Please check email/password.';return}location.reload()};
-$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
-start();
-</script>
-</body>
-</html>
+async function loadDoctors(){const {data,error}=await sb.from('doctors').select('*').order('sort_order');if(error){$('doctorStatus').textContent=error.message;return}doctors=data||[];$('doctorRows').innerHTML=doctors.map(d=>'<tr><td><b>'+esc(d.name_hi)+'</b><br><span class="muted">'+esc(d.specialty_en||'')+'</span></td><td>'+esc(d.opd_time)+'</td><td>'+(d.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editDoctor('+d.id+')">Edit</button></td></tr>').join('');$('opdDoctor').innerHTML=doctors.map(d=>'<option value="'+d.id+'">'+esc(d.name_hi)+'</option>').join('')}
+window.editDoctor=id=>{const d=doctors.find(x=>x.id===id);if(!d)return;$('doctorId').value=d.id;$('doctorNameHi').value=d.name_hi;$('doctorNameEn').value=d.name_en||'';$('doctorQualification').value=d.qualification||'';$('doctorSpecialtyHi').value=d.specialty_hi||'';$('doctorSpecialtyEn').value=d.specialty_en||'';$('doctorOpd').value=d.opd_time||'';$('doctorSlug').value=d.profile_slug||'';$('doctorSort').value=d.sort_order||0;$('doctorSunday').checked=d.sunday_off;$('doctorPublished').checked=d.is_published;scrollTo(0,0)};window.clearDoctor=()=>{$('doctorForm').reset();$('doctorId').value='';$('doctorPublished').checked=true};
+$('doctorForm').onsubmit=async e=>{e.preventDefault();if(currentRole!=='admin')return;const id=$('doctorId').value;const payload={name_hi:$('doctorNameHi').value,name_en:$('doctorNameEn').value,qualification:$('doctorQualification').value,specialty_hi:$('doctorSpecialtyHi').value,specialty_en:$('doctorSpecialtyEn').value,opd_time:$('doctorOpd').value,profile_slug:$('doctorSlug').value,sort_order:+$('doctorSort').value||0,sunday_off:$('doctorSunday').checked,is_published:$('doctorPublished').checked,updated_at:new Date().toISOString()};let res=id?await sb.from('doctors').update(payload).eq('id',id):await sb.from('doctors').insert(payload);$('doctorStatus').textContent=res.error?res.error.message:'Doctor saved successfully.';if(!res.error){await audit(id?'update':'create','doctor',id||null,{name_hi:payload.name_hi});clearDoctor();await loadDoctors()}};
+async function loadServices(){const {data,error}=await sb.from('services').select('*').order('sort_order');if(error){$('serviceStatus').textContent=error.message;return}services=data||[];$('serviceRows').innerHTML=services.map(s=>'<tr><td><b>'+esc(s.title_hi)+'</b><br><span class="muted">'+esc(s.title_en||'')+'</span></td><td>'+esc(s.page_slug)+'</td><td>'+(s.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editService('+s.id+')">Edit</button></td></tr>').join('')}
+window.editService=id=>{const s=services.find(x=>x.id===id);if(!s)return;$('serviceId').value=s.id;$('serviceHi').value=s.title_hi;$('serviceEn').value=s.title_en||'';$('serviceSlug').value=s.page_slug||'';$('serviceSort').value=s.sort_order||0;$('serviceDesc').value=s.short_description||'';$('servicePublished').checked=s.is_published};window.clearService=()=>{$('serviceForm').reset();$('serviceId').value='';$('servicePublished').checked=true};
+$('serviceForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','editor']))return;const id=$('serviceId').value;const payload={title_hi:$('serviceHi').value,title_en:$('serviceEn').value,page_slug:$('serviceSlug').value,sort_order:+$('serviceSort').value||0,short_description:$('serviceDesc').value,is_published:$('servicePublished').checked,updated_at:new Date().toISOString()};const res=id?await sb.from('services').update(payload).eq('id',id):await sb.from('services').insert(payload);$('serviceStatus').textContent=res.error?res.error.message:'Service saved successfully.';if(!res.error){await audit(id?'update':'create','service',id||null,{title_hi:payload.title_hi});clearService();await loadServices()}};
+async function loadOpd(){const {data,error}=await sb.from('opd_schedule').select('*, doctors(name_hi)').order('schedule_date',{ascending:false}).limit(100);if(error){$('opdStatusMsg').textContent=error.message;return}$('opdRows').innerHTML=(data||[]).map(o=>'<tr><td>'+esc(o.schedule_date)+'</td><td>'+esc(o.doctors?.name_hi||'')+'</td><td>'+esc(o.status)+'</td><td>'+esc(o.joint_injection||'')+'</td><td><button class="btn light" onclick="editOpd('+o.id+')">Edit</button></td></tr>').join('');window.opdData=data||[]}
+window.editOpd=id=>{const o=window.opdData.find(x=>x.id===id);if(!o)return;$('opdId').value=o.id;$('opdDoctor').value=o.doctor_id;$('opdDate').value=o.schedule_date;$('opdStatus').value=o.status;$('jointInjection').value=o.joint_injection||'not_specified';$('opdNote').value=o.note||'';$('opdPublished').checked=o.is_published};window.clearOpd=()=>{$('opdForm').reset();$('opdId').value='';$('opdPublished').checked=true};
+$('opdForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','reception']))return;const id=$('opdId').value;const payload={doctor_id:+$('opdDoctor').value,schedule_date:$('opdDate').value,status:$('opdStatus').value,joint_injection:$('jointInjection').value,note:$('opdNote').value,is_published:$('opdPublished').checked,updated_at:new Date().toISOString()};const res=id?await sb.from('opd_schedule').update(payload).eq('id',id):await sb.from('opd_schedule').insert(payload);$('opdStatusMsg').textContent=res.error?res.error.message:'OPD schedule saved successfully.';if(!res.error){await audit(id?'update':'create','opd_schedule',id||null,payload);clearOpd();await loadOpd()}};
+async function loadUpdates(){const {data,error}=await sb.from('hospital_updates').select('*').order('created_at',{ascending:false});if(error){$('updateStatus').textContent=error.message;return}window.updateData=data||[];$('updateRows').innerHTML=window.updateData.map(u=>'<tr><td><b>'+esc(u.title_hi)+'</b></td><td>'+esc(u.publish_date||'')+'</td><td>'+(u.is_published?'Yes':'No')+'</td><td><button class="btn light" onclick="editUpdate('+u.id+')">Edit</button></td></tr>').join('')}
+window.editUpdate=id=>{const u=window.updateData.find(x=>x.id===id);if(!u)return;$('updateId').value=u.id;$('updateHi').value=u.title_hi;$('updateEn').value=u.title_en||'';$('updateDate').value=u.publish_date||'';$('updatePublished').checked=u.is_published;$('updateBodyHi').value=u.body_hi||'';$('updateBodyEn').value=u.body_en||''};window.clearUpdate=()=>{$('updateForm').reset();$('updateId').value=''};
+$('updateForm').onsubmit=async e=>{e.preventDefault();if(!can(currentRole,['admin','editor']))return;const id=$('updateId').value;const payload={title_hi:$('updateHi').value,title_en:$('updateEn').value,publish_date:$('updateDate').value||null,is_published:$('updatePublished').checked,body_hi:$('updateBodyHi').value,body_en:$('updateBodyEn').value,updated_at:new Date().toISOString()};const res=id?await sb.from('hospital_updates').update(payload).eq('id',id):await sb.from('hospital_updates').insert(payload);$('updateStatus').textContent=res.error?res.error.message:'Update saved successfully.';if(!res.error){await audit(id?'update':'create','hospital_update',id||null,{title_hi:payload.title_hi});clearUpdate();await loadUpdates()}};
+async function loadWhatsapp(){const {data,error}=await sb.from('whatsapp_settings').select('*').limit(1).maybeSingle();if(error){$('waStatus').textContent=error.message;return}if(data){$('waAppointment').value=data.appointment_number||'';$('waEmergency').value=data.emergency_number||'';$('waGeneral').value=data.general_number||'';$('waAppointmentTemplate').value=data.appointment_template||'';$('waRegistrationTemplate').value=data.registration_template||''}window.waId=data?.id||null}
+$('waForm').onsubmit=async e=>{e.preventDefault();if(currentRole!=='admin')return;const payload={appointment_number:$('waAppointment').value,emergency_number:$('waEmergency').value,general_number:$('waGeneral').value,appointment_template:$('waAppointmentTemplate').value,registration_template:$('waRegistrationTemplate').value,updated_at:new Date().toISOString()};const res=window.waId?await sb.from('whatsapp_settings').update(payload).eq('id',window.waId):await sb.from('whatsapp_settings').insert(payload);$('waStatus').textContent=res.error?'Save failed: '+res.error.message:'WhatsApp settings saved.';if(!res.error)await audit('update','whatsapp_settings',window.waId,payload)};
+function roadmapBadge(s){const c={'COMPLETED':'rb-completed','RUNNING':'rb-running','TO BE':'rb-to-be','REWORK':'rb-rework','ON HOLD':'rb-on-hold'}[s]||'rb-to-be';const i={'COMPLETED':'🟢','RUNNING':'🔵','TO BE':'🟡','REWORK':'🔴','ON HOLD':'⚪'}[s]||'🟡';return '<span class="roadmap-badge '+c+'">'+i+' '+esc(s)+'</span>'}function roadmapDate(v){if(!v)return '';const d=new Date(v+'T00:00:00');return isNaN(d)?esc(v):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}function roadmapSafe(v){return esc(v||'').replace(/\n/g,'<br>')}
+function renderRoadmapSummary(){const c={COMPLETED:0,RUNNING:0,'TO BE':0,REWORK:0,'ON HOLD':0};roadmapTasks.forEach(t=>{if(c[t.status]!==undefined)c[t.status]++});$('roadmapSummary').innerHTML=[['📋','Total tasks',roadmapTasks.length],['🟢','Completed',c.COMPLETED],['🔵','Running',c.RUNNING],['🟡','To Be',c['TO BE']],['🔴','Rework',c.REWORK],['⚪','On Hold',c['ON HOLD']]].map(x=>'<div class="roadmap-stat"><b>'+x[0]+' '+x[2]+'</b><span>'+x[1]+'</span></div>').join('')}
+function renderRoadmap(){const q=($('roadmapSearch').value||'').trim().toLowerCase(),pid=$('roadmapPhaseFilter').value,status=$('roadmapStatusFilter').value;let out='';roadmapPhases.filter(p=>!pid||String(p.id)===pid).forEach(p=>{let tasks=roadmapTasks.filter(t=>t.phase_id===p.id).filter(t=>{const hay=[p.title,t.title,t.details,t.acceptance_criteria,t.task_date,t.status].join(' ').toLowerCase();return(!q||hay.includes(q))&&(!status||t.status===status)}).sort((a,b)=>(a.task_date||'').localeCompare(b.task_date||'')||(a.sort_order||0)-(b.sort_order||0));if(!tasks.length)return;const done=tasks.filter(t=>t.status==='COMPLETED').length;out+='<div class="roadmap-phase"><div class="roadmap-phase-head"><div><div class="roadmap-phase-title">Phase '+esc(p.phase_no)+' — '+esc(p.title)+'</div><div class="roadmap-phase-meta">'+roadmapDate(p.start_date)+' → '+roadmapDate(p.end_date)+' • '+done+'/'+tasks.length+' shown tasks completed</div></div>'+roadmapBadge(p.status)+'</div><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Task & Details</th><th>Status</th></tr></thead><tbody>';tasks.forEach(t=>{out+='<tr><td style="min-width:105px">'+roadmapDate(t.task_date)+'</td><td style="min-width:280px"><b>'+esc(t.title)+'</b>'+(t.details?'<div class="roadmap-task-details">'+roadmapSafe(t.details)+'</div>':'')+(t.acceptance_criteria?'<div class="roadmap-criteria"><b>Acceptance:</b> '+roadmapSafe(t.acceptance_criteria)+'</div>':'')+'</td><td style="min-width:125px">'+(currentRole==='admin'?'<select class="roadmap-status-select" onchange="updateRoadmapTaskStatus('+t.id+',this.value)">'+['COMPLETED','RUNNING','TO BE','REWORK','ON HOLD'].map(s=>'<option value="'+s+'" '+(s===t.status?'selected':'')+'>'+s+'</option>').join('')+'</select>':roadmapBadge(t.status))+'</td></tr>'});out+='</tbody></table></div></div>'});$('roadmapRows').innerHTML=out||'<div class="roadmap-empty">No roadmap tasks match the current filters.</div>'}
+async function loadRoadmap(){if(currentRole!=='admin')return;$('roadmapStatus').textContent='Loading roadmap…';const [p,t]=await Promise.all([sb.from('roadmap_phases').select('*').order('sort_order'),sb.from('roadmap_tasks').select('*').order('task_date').order('sort_order')]);if(p.error||t.error){$('roadmapStatus').textContent='Roadmap load failed: '+(p.error?.message||t.error?.message);return}roadmapPhases=p.data||[];roadmapTasks=t.data||[];const old=$('roadmapPhaseFilter').value;$('roadmapPhaseFilter').innerHTML='<option value="">All phases</option>'+roadmapPhases.map(x=>'<option value="'+x.id+'">Phase '+esc(x.phase_no)+' — '+esc(x.title)+'</option>').join('');$('roadmapPhaseFilter').value=old;renderRoadmapSummary();renderRoadmap();$('roadmapLast').textContent='Last loaded: '+new Date().toLocaleString('en-IN');$('roadmapStatus').textContent='Loaded '+roadmapTasks.length+' tasks across '+roadmapPhases.length+' phases.'}
+window.updateRoadmapTaskStatus=async(id,newStatus)=>{if(currentRole!=='admin')return;$('roadmapStatus').textContent='Saving roadmap task…';const old=roadmapTasks.find(x=>x.id===id);const res=await sb.from('roadmap_tasks').update({status:newStatus,completed_at:newStatus==='COMPLETED'?new Date().toISOString():null,updated_at:new Date().toISOString()}).eq('id',id);if(res.error){$('roadmapStatus').textContent='Update failed: '+res.error.message;return}await audit('update','roadmap_task',id,{title:old?.title,from:old?.status,to:newStatus});await loadRoadmap()}
+$('roadmapSearch').oninput=renderRoadmap;$('roadmapPhaseFilter').onchange=renderRoadmap;$('roadmapStatusFilter').onchange=renderRoadmap;
+async function start(){const p=await profile();if(!p){$('loginCard').style.display='block';return}currentRole=p.profile.role;$('loginCard').style.display='none';$('app').style.display='block';$('roleBadge').textContent='Role: '+currentRole;if(!can(currentRole,['admin'])){document.querySelector('[data-tab="doctors"]').classList.add('hidden');document.querySelector('[data-tab="whatsapp"]').classList.add('hidden');document.querySelector('[data-tab="roadmap"]').classList.add('hidden')}if(!can(currentRole,['admin','reception']))document.querySelector('[data-tab="opd"]').classList.add('hidden');if(!can(currentRole,['admin','editor'])){document.querySelector('[data-tab="services"]').classList.add('hidden');document.querySelector('[data-tab="updates"]').classList.add('hidden')}await loadDoctors();await loadServices();await loadOpd();await loadUpdates();if(currentRole==='admin'){await loadWhatsapp();await loadRoadmap()}}
+$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginStatus').textContent='Signing in...';const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){$('loginStatus').textContent='Login failed. Please check email/password.';return}location.reload()};$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};start();
+</script></body></html>
