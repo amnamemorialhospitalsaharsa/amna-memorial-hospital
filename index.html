@@ -312,38 +312,8 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <h2>👨‍⚕️ Our Doctors | हमारे डॉक्टर</h2>
   <p class="section-intro">Amna Memorial Hospital, Saharsa, Bihar में उपलब्ध doctors, उनकी specialties और OPD timings की जानकारी यहाँ देखें।</p>
 
-  <div class="doctor-grid">
-
-    <div class="doctor">
-      <div class="doctor-photo real">
-        <img src="dr-abul-kalam.jpeg" alt="डॉ. अबुल कलाम">
-      </div>
-      <h3><a href="dr-abul-kalam.html">डॉ. अबुल कलाम</a></h3>
-      <p>MBBS, D.Ortho<br>Orthopaedic Surgeon</p>
-      <p>OPD Timing: 4:00 PM – 7:00 PM</p>
-      <p><a href="dr-abul-kalam.html">View Doctor Profile →</a></p>
-    </div>
-
-    <div class="doctor">
-      <div class="doctor-photo real">
-        <img src="dr-prof-md-tarique.jpeg" alt="Dr. (Prof.) Md. Tarique">
-      </div>
-      <h3><a href="dr-prof-md-tarique.html">डॉ. प्रो0 मो0 तारिक</a></h3>
-      <p>MBBS, DNB(I), MS, FIAGES, FMAS<br>General, Laparoscopic &amp; Laser Surgeon</p>
-      <p>OPD Timing: 2:00 PM – 6:00 PM</p>
-      <p><a href="dr-prof-md-tarique.html">View Doctor Profile →</a></p>
-    </div>
-
-    <div class="doctor">
-      <div class="doctor-photo real">
-        <img src="dr-prof-hena-farooqui.jpeg" alt="डॉ. प्रो0 हिना फारूकी">
-      </div>
-      <h3><a href="dr-prof-hena-farooqui.html">डॉ. प्रो0 हिना फारूकी</a></h3>
-      <p>MBBS, MS<br>Obstetrician &amp; Gynaecologist</p>
-      <p>OPD Timing: 2:00 PM – 6:00 PM</p>
-      <p><a href="dr-prof-hena-farooqui.html">View Doctor Profile →</a></p>
-    </div>
-
+  <div class="doctor-grid" id="doctorGrid">
+    <div class="doctor"><p>Loading doctor information…</p></div>
   </div>
 
   <p class="section-intro" style="margin-top:16px;">
@@ -390,19 +360,27 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 
 <section id="appointment">
   <h2>📅 Book Appointment | अपॉइंटमेंट</h2>
-  <p class="section-intro">Complete the form. Your appointment request will open in WhatsApp for confirmation.</p><p class="section-intro"><a href="patient-registration.html"><b>📝 Patient Registration | मरीज पंजीकरण →</b></a></p>
-  <form id="appointmentForm" novalidate>
-    <div class="form-grid">
-      <label>Patient Name / मरीज का नाम<input id="name" required autocomplete="name" placeholder="Enter patient name"></label>
-      <label>Mobile Number / मोबाइल नंबर<input id="mobile" required type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="10 digit mobile number"></label>
-      <label>Age / उम्र<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
-      <label>Gender / लिंग<select id="gen  <div class="doctor-grid" id="doctorGrid">
-    <div class="doctor"><p>Loading doctor information…</p></div>
-  </div>    <div class="contact-card"><strong>📞 Hospital / Emergency</strong><span>+91 82949 05389</span></div>
-    <div class="contact-card"><strong>📍 Address</strong><span>Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar</span></div>
-    <div class="contact-card"><strong>🗺️ Directions</strong><span><a href="https://www.google.com/maps/search/?api=1&query=Amna%20Memorial%20Hospital%2C%20Bangaon%20Road%2C%20Saharsa%2C%20Bihar%20852201" target="_blank" rel="noopener">Open Google Maps</a></span></div>
-  </div>
+  <p class="section-intro">Complete the form. Your appointment request will open in WhatsApp for confirmation.</p>
+  <p class="section-intro"><a href="patient-registration.html"><b>📝 Patient Registration | मरीज पंजीकरण →</b></a></p>
+  <form id="appointmentForm" novalidate><div class="form-grid">
+    <label>Patient Name / मरीज का नाम<input id="name" required autocomplete="name" placeholder="Enter patient name"></label>
+    <label>Mobile Number / मोबाइल नंबर<input id="mobile" required type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="10 digit mobile number"></label>
+    <label>Age / उम्र<input id="age" type="number" min="0" max="120" placeholder="Age"></label>
+    <label>Gender / लिंग<select id="gender"><option>Male / पुरुष</option><option>Female / महिला</option><option>Other / अन्य</option></select></label>
+    <label>Patient Type / मरीज का प्रकार<select id="patientType"><option>New Patient / नया मरीज</option><option>Follow-up / पुनः परामर्श</option></select></label>
+    <label>Doctor / डॉक्टर<select id="doctor"><option value="">Loading doctors…</option></select></label>
+    <label>Preferred Date / पसंदीदा तारीख<input id="date" type="date" required></label>
+    <label>Preferred Time / पसंदीदा समय<input id="time" type="time"></label>
+    <label class="full">Problem / समस्या<textarea id="problem" placeholder="Briefly describe your problem"></textarea></label>
+  </div><div class="notice">नोट: यह appointment request है। Final confirmation hospital/WhatsApp team द्वारा दी जाएगी.</div>
+  <button class="submit" type="submit">📲 Send Appointment on WhatsApp</button></form>
 </section>
+<section id="contact"><h2>📞 Contact Amna Memorial Hospital</h2><div class="contact">
+  <div class="contact-card"><strong>📲 WhatsApp / Phone</strong><span>+91 80512 46461</span></div>
+  <div class="contact-card"><strong>📞 Hospital / Emergency</strong><span>+91 82949 05389</span></div>
+  <div class="contact-card"><strong>📍 Address</strong><span>Mir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar</span></div>
+  <div class="contact-card"><strong>🗺️ Directions</strong><span><a href="https://www.google.com/maps/search/?api=1&query=Amna%20Memorial%20Hospital%2C%20Bangaon%20Road%2C%20Saharsa%2C%20Bihar%20852201" target="_blank" rel="noopener">Open Google Maps</a></span></div>
+</div></section>
 
 <section id="why">
   <h2>⭐ Why Use Our Patient Portal?</h2>
@@ -439,95 +417,23 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 <script>
 const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X";
-const {createClient}=window.supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-
-async function loadHospitalData(){
-  const [dRes,sRes,oRes]=await Promise.all([
-    sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),
-    sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),
-    sb.from("opd_schedule").select("*, doctors(name_hi)").eq("is_published",true).order("schedule_date",{ascending:false}).limit(100)
-  ]);
-  if(!dRes.error) renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));
-  if(!sRes.error) renderServices(sRes.data||[]);
-}
-function doctorImage(slug){
-  const map={
-    "dr-abul-kalam":"dr-abul-kalam.jpeg",
-    "dr-prof-md-tarique":"dr-prof-md-tarique.jpeg",
-    "dr-prof-hena-farooqui":"dr-prof-hena-farooqui.jpeg"
-  };
-  return map[slug]||"hospital-logo.jpg";
-}
-function renderDoctors(doctors,opd){
-  const grid=document.getElementById("doctorGrid"); if(!grid)return;
-  grid.innerHTML=doctors.map(d=>{
-    const rows=opd.filter(x=>String(x.doctor_id)===String(d.id));
-    const latest=rows[0];
-    let availability="";
-    if(latest){
-      availability=latest.status==="available"?"<p>📅 आज/हालिया OPD: <b>Available</b></p>":"<p>📅 हालिया OPD: <b>Unavailable</b></p>";
-      if(latest.joint_injection==="given") availability+="<p>💉 Joint Injection: <b>Given</b></p>";
-      if(latest.joint_injection==="not_given") availability+="<p>💉 Joint Injection: <b>Not given</b></p>";
-      if(latest.note) availability+="<p>"+escHospital(latest.note)+"</p>";
-    }
-    return '<div class="doctor">'+
-      '<div class="doctor-photo real"><img src="'+doctorImage(d.profile_slug)+'" alt="'+escHospital(d.name_hi)+'"></div>'+
-      '<h3><a href="'+escHospital(d.profile_slug||"#")+'.html">'+escHospital(d.name_hi)+'</a></h3>'+
-      '<p>'+escHospital(d.qualification||"")+'<br>'+escHospital(d.specialty_en||d.specialty_hi||"")+'</p>'+
-      '<p>OPD Timing: '+escHospital(d.opd_time||"Confirm with hospital")+'</p>'+availability+
-      '<p><a href="'+escHospital(d.profile_slug||"#")+'.html">View Doctor Profile →</a></p></div>';
-  }).join("")||'<div class="doctor"><p>Doctor information is temporarily unavailable.</p></div>';
-  const select=document.getElementById("doctor");
-  if(select) select.innerHTML='<option value="">Select Doctor / डॉक्टर चुनें</option>'+
-    doctors.map(d=>'<option value="'+escHospital(d.name_hi)+'">'+escHospital(d.name_hi)+'</option>').join("")+
-    '<option value="Any Available Doctor">Any Available Doctor</option>';
-}
-function renderServices(services){
-  const grid=document.getElementById("serviceCards"); if(!grid)return;
-  grid.innerHTML=services.map(s=>{
-    const link=s.page_slug?escHospital(s.page_slug)+".html":"#services";
-    return '<div class="card"><h3>🏥 <a href="'+link+'">'+escHospital(s.title_hi||s.title_en||"Service")+'</a></h3>'+
-      '<div>'+escHospital(s.title_en||"")+'</div>'+
-      (s.short_description?'<p>'+escHospital(s.short_description)+'</p>':"")+
-      (s.page_slug?'<div><a href="'+link+'">सेवा विवरण →</a></div>':"")+
-      '</div>';
-  }).join("")||'<div class="card"><p>Service information is temporarily unavailable.</p></div>';
-}
-function escHospital(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c));}
-loadHospitalData();
-</script>
+const {createClient}=window.supabase; const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const WHATSAPP="918051246461";
-const qrImage=document.getElementById("qrImage");
-const qrDownload=document.getElementById("qrDownload");
-const dateInput=document.getElementById("date");
-const topBtn=document.getElementById("top");
-
-function setQR(url){
-  const src="https://api.qrserver.com/v1/create-qr-code/?size=700x700&margin=12&data="+encodeURIComponent(url);
-  qrImage.src=src; qrDownload.href=src;
+const qrImage=document.getElementById("qrImage"),qrDownload=document.getElementById("qrDownload"),dateInput=document.getElementById("date"),topBtn=document.getElementById("top");
+function escHospital(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c));}
+function doctorImage(slug){return {"dr-abul-kalam":"dr-abul-kalam.jpeg","dr-prof-md-tarique":"dr-prof-md-tarique.jpeg","dr-prof-hena-farooqui":"dr-prof-hena-farooqui.jpeg"}[slug]||"hospital-logo.jpg";}
+function renderDoctors(doctors,opd){
+ const grid=document.getElementById("doctorGrid"); if(!grid)return;
+ grid.innerHTML=doctors.map(d=>{const latest=(opd||[]).find(x=>String(x.doctor_id)===String(d.id));const availability=latest?'<p>📅 OPD: <b>'+ (latest.status==="available"?"Available":"Unavailable")+'</b></p>':"";
+ const profile=d.profile_slug?escHospital(d.profile_slug)+".html":"#";
+ return '<div class="doctor"><div class="doctor-photo real"><img src="'+doctorImage(d.profile_slug)+'" alt="'+escHospital(d.name_hi)+'"></div><h3><a href="'+profile+'">'+escHospital(d.name_hi)+'</a></h3><p>'+escHospital(d.qualification||"")+'<br>'+escHospital(d.specialty_en||d.specialty_hi||"")+'</p><p>OPD Timing: '+escHospital(d.opd_time||"Confirm with hospital")+'</p>'+availability+'<p><a href="'+profile+'">View Doctor Profile →</a></p></div>';}).join("")||'<div class="doctor"><p>Doctor information is temporarily unavailable.</p></div>';
+ const select=document.getElementById("doctor"); if(select)select.innerHTML='<option value="">Select Doctor / डॉक्टर चुनें</option>'+doctors.map(d=>'<option value="'+escHospital(d.name_hi)+'">'+escHospital(d.name_hi)+'</option>').join("")+'<option value="Any Available Doctor">Any Available Doctor</option>';
 }
-setQR(window.location.href);
-
-const now=new Date();
-dateInput.min=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-document.getElementById("appointmentForm").addEventListener("submit",function(e){
-  e.preventDefault();
-  const name=document.getElementById("name").value.trim();
-  const mobile=document.getElementById("mobile").value.trim();
-  const age=document.getElementById("age").value.trim();
-  const gender=document.getElementById("gender").value;
-  const patientType=document.getElementById("patientType").value;
-  const doctor=document.getElementById("doctor").value;
-  const date=document.getElementById("date").value;
-  const time=document.getElementById("time").value;
-  const problem=document.getElementById("problem").value.trim();
-
-  if(!name){alert("Please enter the patient's name.");return}
-  if(!/^[0-9]{10}$/.test(mobile)){alert("Please enter a valid 10-digit mobile number.");return}
-  if(!date){alert("Please select a preferred date.");return}
-
-  const message=`*New Appointment Request*
+function renderServices(services){const grid=document.getElementById("serviceCards");if(!grid)return;grid.innerHTML=services.map(s=>{const link=s.page_slug?escHospital(s.page_slug)+".html":"#services";return '<div class="card"><h3>🏥 <a href="'+link+'">'+escHospital(s.title_hi||s.title_en||"Service")+'</a></h3><div>'+escHospital(s.title_en||"")+'</div>'+(s.short_description?'<p>'+escHospital(s.short_description)+'</p>':"")+(s.page_slug?'<div><a href="'+link+'">सेवा विवरण →</a></div>':"")+'</div>';}).join("")||'<div class="card"><p>Service information is temporarily unavailable.</p></div>';}
+async function loadHospitalData(){const [dRes,sRes,oRes]=await Promise.all([sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("opd_schedule").select("*").eq("is_published",true).order("schedule_date",{ascending:false}).limit(100)]);if(!dRes.error)renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));if(!sRes.error)renderServices(sRes.data||[]);}
+function setQR(url){const src="https://api.qrserver.com/v1/create-qr-code/?size=700x700&margin=12&data="+encodeURIComponent(url);qrImage.src=src;qrDownload.href=src;} setQR(window.location.href);
+const now=new Date();dateInput.min=now.toISOString().slice(0,10);
+document.getElementById("appointmentForm").addEventListener("submit",function(e){e.preventDefault();const name=document.getElementById("name").value.trim(),mobile=document.getElementById("mobile").value.trim(),age=document.getElementById("age").value.trim(),gender=document.getElementById("gender").value,patientType=document.getElementById("patientType").value,doctor=document.getElementById("doctor").value,date=document.getElementById("date").value,time=document.getElementById("time").value,problem=document.getElementById("problem").value.trim();if(!name){alert("Please enter the patient's name.");return}if(!/^[0-9]{10}$/.test(mobile)){alert("Please enter a valid 10-digit mobile number.");return}if(!date){alert("Please select a preferred date.");return}const message=`*New Appointment Request*
 
 *Amna Memorial Hospital*
 
@@ -541,13 +447,8 @@ document.getElementById("appointmentForm").addEventListener("submit",function(e)
 *Time:* ${time||"Any time"}
 *Problem:* ${problem||"Not provided"}
 
-_Please confirm my appointment._`;
-
-  window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(message),"_blank","noopener");
-});
-
-window.addEventListener("scroll",()=>topBtn.classList.toggle("show",window.scrollY>450));
-topBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
+_Please confirm my appointment._`;window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(message),"_blank","noopener");});
+window.addEventListener("scroll",()=>topBtn.classList.toggle("show",window.scrollY>450));topBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));loadHospitalData();
 </script>
 </body>
 </html>
