@@ -165,6 +165,25 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 .photo.has-image .caption span{display:block}
 .doctor-photo.real{width:100%;height:245px;border-radius:15px;overflow:hidden;background:#dff1f1;margin-bottom:14px}
 .doctor-photo.real img{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block}
+
+.gallery-photo{cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
+.gallery-photo:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(18,51,58,.14)}
+.gallery-photo img{transition:transform .25s ease}
+.gallery-photo:hover img{transform:scale(1.025)}
+.gallery-hint{font-size:12px;color:var(--muted);margin:-8px 0 16px}
+.gallery-modal{position:fixed;inset:0;z-index:300;background:rgba(5,25,28,.92);display:none;align-items:center;justify-content:center;padding:20px}
+.gallery-modal.open{display:flex}
+.gallery-dialog{position:relative;width:min(980px,100%);max-height:94vh;display:flex;align-items:center;justify-content:center}
+.gallery-dialog img{max-width:100%;max-height:82vh;width:auto;height:auto;object-fit:contain;border-radius:14px;box-shadow:0 15px 50px rgba(0,0,0,.45)}
+.gallery-close,.gallery-prev,.gallery-next{position:absolute;border:0;background:#ffffffee;color:var(--dark);width:44px;height:44px;border-radius:50%;font-size:25px;font-weight:900;cursor:pointer;display:grid;place-items:center;box-shadow:0 5px 20px #0004}
+.gallery-close{right:0;top:-4px}.gallery-prev{left:-4px;top:50%;transform:translateY(-50%)}.gallery-next{right:-4px;top:50%;transform:translateY(-50%)}
+.gallery-caption{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);background:#ffffffee;color:var(--dark);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:800;max-width:80%;text-align:center}
+.gallery-counter{position:absolute;left:50%;top:-4px;transform:translateX(-50%);background:#0009;color:#fff;padding:6px 11px;border-radius:999px;font-size:12px}
+@media(max-width:700px){
+ .gallery-modal{padding:12px}.gallery-dialog img{max-height:76vh;border-radius:10px}
+ .gallery-close{right:0;top:-8px}.gallery-prev{left:2px}.gallery-next{right:2px}
+ .gallery-caption{bottom:-4px;font-size:12px;max-width:72%}
+}
 @media(max-width:700px){
   .hero-photo img{height:280px}
   .photo.has-image img{height:230px}
@@ -322,23 +341,35 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 </section>
 
 <section id="gallery">
-  <h2>📸 Hospital Photos</h2>
-  <p class="section-intro">Official hospital and doctor photographs provided by Amna Memorial Hospital.</p>
-  <div class="photo-grid">
-    <div class="photo has-image">
-      <img src="hospital-exterior.png" alt="Amna Memorial Hospital exterior">
+  <h2>📸 Hospital Photos | फोटो गैलरी</h2>
+  <p class="section-intro">Amna Memorial Hospital की official photographs यहाँ देखें। किसी भी photo पर tap/click करके बड़ी image खोलें।</p>
+  <p class="gallery-hint">🔍 Photo पर tap करें • ← → से बदलें • ✕ से बंद करें</p>
+  <div class="photo-grid" id="hospitalGallery">
+    <div class="photo has-image gallery-photo" data-full="hospital-exterior.png" data-title="Hospital Exterior" data-subtitle="Amna Memorial Hospital">
+      <img src="hospital-exterior.png" alt="Amna Memorial Hospital exterior" loading="lazy">
       <div class="caption"><strong>Hospital Exterior</strong><span>Amna Memorial Hospital</span></div>
     </div>
-    <div class="photo has-image">
-      <img src="dr-prof-hena-farooqui.jpeg" alt="डॉ. प्रो0 हिना फारूकी">
+    <div class="photo has-image gallery-photo" data-full="dr-prof-hena-farooqui.jpeg" data-title="Doctor Consultation" data-subtitle="Official hospital photograph">
+      <img src="dr-prof-hena-farooqui.jpeg" alt="डॉ. प्रो0 हिना फारूकी" loading="lazy">
       <div class="caption"><strong>Doctor Consultation</strong><span>Official hospital photograph</span></div>
     </div>
-    <div class="photo has-image">
-      <img src="dr-prof-md-tarique.jpeg" alt="Dr. (Prof.) Md. Tarique">
+    <div class="photo has-image gallery-photo" data-full="dr-prof-md-tarique.jpeg" data-title="Medical Team" data-subtitle="Official hospital photograph">
+      <img src="dr-prof-md-tarique.jpeg" alt="Dr. (Prof.) Md. Tarique" loading="lazy">
       <div class="caption"><strong>Medical Team</strong><span>Official hospital photograph</span></div>
     </div>
   </div>
 </section>
+
+<div class="gallery-modal" id="galleryModal" role="dialog" aria-modal="true" aria-label="Hospital photo gallery">
+  <div class="gallery-dialog">
+    <button class="gallery-close" id="galleryClose" type="button" aria-label="Close gallery">×</button>
+    <button class="gallery-prev" id="galleryPrev" type="button" aria-label="Previous photo">‹</button>
+    <img id="galleryModalImage" src="" alt="">
+    <button class="gallery-next" id="galleryNext" type="button" aria-label="Next photo">›</button>
+    <div class="gallery-counter" id="galleryCounter"></div>
+    <div class="gallery-caption" id="galleryCaption"></div>
+  </div>
+</div>
 
 <section id="hours">
   <h2>🕐 Opening &amp; Visiting Information</h2>
@@ -448,6 +479,36 @@ document.getElementById("appointmentForm").addEventListener("submit",function(e)
 *Problem:* ${problem||"Not provided"}
 
 _Please confirm my appointment._`;window.open("https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(message),"_blank","noopener");});
+
+const galleryItems=[...document.querySelectorAll(".gallery-photo")];
+const galleryModal=document.getElementById("galleryModal");
+const galleryModalImage=document.getElementById("galleryModalImage");
+const galleryCaption=document.getElementById("galleryCaption");
+const galleryCounter=document.getElementById("galleryCounter");
+let galleryIndex=0;
+function showGalleryImage(index){
+  if(!galleryItems.length)return;
+  galleryIndex=(index+galleryItems.length)%galleryItems.length;
+  const item=galleryItems[galleryIndex];
+  galleryModalImage.src=item.dataset.full;
+  galleryModalImage.alt=item.querySelector("img")?.alt||item.dataset.title||"Hospital photo";
+  galleryCaption.textContent=item.dataset.title+(item.dataset.subtitle?" • "+item.dataset.subtitle:"");
+  galleryCounter.textContent=(galleryIndex+1)+" / "+galleryItems.length;
+}
+function openGallery(index){showGalleryImage(index);galleryModal.classList.add("open");document.body.style.overflow="hidden";}
+function closeGallery(){galleryModal.classList.remove("open");document.body.style.overflow="";galleryModalImage.src="";}
+galleryItems.forEach((item,index)=>item.addEventListener("click",()=>openGallery(index)));
+document.getElementById("galleryClose").addEventListener("click",closeGallery);
+document.getElementById("galleryPrev").addEventListener("click",()=>showGalleryImage(galleryIndex-1));
+document.getElementById("galleryNext").addEventListener("click",()=>showGalleryImage(galleryIndex+1));
+galleryModal.addEventListener("click",e=>{if(e.target===galleryModal)closeGallery();});
+document.addEventListener("keydown",e=>{
+ if(!galleryModal.classList.contains("open"))return;
+ if(e.key==="Escape")closeGallery();
+ if(e.key==="ArrowLeft")showGalleryImage(galleryIndex-1);
+ if(e.key==="ArrowRight")showGalleryImage(galleryIndex+1);
+});
+
 window.addEventListener("scroll",()=>topBtn.classList.toggle("show",window.scrollY>450));topBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));loadHospitalData();
 </script>
 </body>
