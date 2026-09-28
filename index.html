@@ -636,7 +636,7 @@ document.getElementById("aiForm").addEventListener("submit",async e=>{
   addAiMessage("उत्तर तैयार हो रहा है…","bot");
   const pending=aiMessages.lastElementChild;
   try{pending.textContent=await askHospitalAI(message);}
-  catch(err){pending.textContent="अभी AI service से connection नहीं हो पाया। कृपया थोड़ी देर बाद फिर कोशिश करें या hospital से सीधे संपर्क करें।";}
+  catch(err){pending.textContent="AI error: "+(err?.message||"Unknown error");}
   finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}
 });
 
