@@ -940,8 +940,14 @@ async function smartHospitalAssistant(message){
   return "मैं Amna Memorial Hospital का Smart Patient Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• किसी doctor की OPD कब है?\n• मेरी समस्या के लिए कौन-सा department/doctor relevant है?\n• Appointment कैसे लें या reschedule करें?\n• Patient registration कैसे करें?\n• CT Scan / X-Ray / Ultrasound / Pathology / BMD की जानकारी\n• Admission / IPD / ICU / NICU की जानकारी\n• Surgery / Laparoscopy / Laser Surgery की जानकारी\n• Pharmacy / Surgical Shop की जानकारी\n• अस्पताल का पता, Directions या Emergency number\n\nमैं diagnosis या prescription नहीं देता; medical decision doctor की consultation के बाद लें।";
 }
 
-const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
-document.getElementById("aiChatLauncher").addEventListener("click",()=>{aiChat.classList.add("open");aiInput.focus();});
+const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput"),aiChatLauncher=document.getElementById("aiChatLauncher");
+// Robust mobile initialization: ensure the launcher works even if another script fails earlier.
+if(aiChat && aiChatLauncher){
+  const openAiChat=()=>{aiChat.classList.add("open"); if(aiInput) setTimeout(()=>aiInput.focus(),50);};
+  aiChatLauncher.addEventListener("click",openAiChat);
+  aiChatLauncher.addEventListener("touchend",e=>{e.preventDefault();openAiChat();},{passive:false});
+  aiChatLauncher.onclick=openAiChat;
+}
 document.getElementById("aiClose").addEventListener("click",()=>aiChat.classList.remove("open"));
 document.querySelectorAll("[data-ai-q]").forEach(btn=>btn.addEventListener("click",()=>{aiInput.value=btn.getAttribute("data-ai-q");document.getElementById("aiForm").requestSubmit();}));
 function renderAiMessage(el,text){
