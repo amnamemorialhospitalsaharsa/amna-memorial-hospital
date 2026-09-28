@@ -974,10 +974,17 @@ function aiIntent(message) {
   }
 
   // 3. Live doctor availability MUST be checked before generic doctor listing.
-  // Date is resolved centrally by aiDateInfo(), so "कल" always queries tomorrow.
-  if (availabilityQuestion && (doctorQuestion || today || tomorrow || aiHas(q, "कौन"))) {
+  // Natural-language specialty queries are mapped to the relevant doctor first.
+  const womenDoctorQuestion = aiHas(q,
+    "महिला डॉक्टर", "महिला डाक्टर", "महिला विशेषज्ञ", "lady doctor",
+    "female doctor", "women doctor", "woman doctor"
+  );
+  if (availabilityQuestion && (doctorQuestion || today || tomorrow || aiHas(q, "कौन") || womenDoctorQuestion)) {
     if (doctorKey && !aiHas(q, "कौन", "कौन-कौन", "कौन कौन")) {
       return { type: "doctor_availability", doctorKey };
+    }
+    if (womenDoctorQuestion) {
+      return { type: "doctor_availability", doctorKey: "hena" };
     }
     return { type: "availability" };
   }
