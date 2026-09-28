@@ -721,7 +721,7 @@ function aiIntent(message){
   if(aiHas(q,"appointment","अपॉइंटमेंट","booking","बुकिंग","appointment लेना","appointment kaise","अपॉइंटमेंट कैसे"))return {type:"appointment"};
 
   const today=aiHas(q,"आज","today"),tomorrow=aiHas(q,"कल","tomorrow");
-  const doctor=aiHas(q,"doctor","doctors","डॉक्टर","डाक्टर","डॉ","चिकित्सक","dr");
+  const doctor=aiHas(q,"doctor","doctors","डॉक्टर","डाक्टर","डॉ","चिकित्सक") || /(^|\s)dr\.?($|\s)/i.test(q);
   const avail=aiHas(q,"available","availability","उपलब्ध","बैठ","बैठेंगे","बैठते","sitting");
   const opd=aiHas(q,"opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
   if((today||tomorrow)&&doctor&&avail)return {type:"availability"};
