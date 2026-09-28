@@ -724,8 +724,8 @@ function aiIntent(message){
   const doctor=aiHas(q,"doctor","doctors","डॉक्टर","डाक्टर","डॉ","चिकित्सक") || /(^|\s)dr\.?($|\s)/i.test(q);
   const avail=aiHas(q,"available","availability","उपलब्ध","बैठ","बैठेंगे","बैठते","sitting");
   const opd=aiHas(q,"opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
-  if((today||tomorrow)&&doctor&&avail)return {type:"availability"};
-  if(dk&&opd&&(today||tomorrow||true))return {type:"doctor_opd",doctorKey:dk};
+  if(doctor&&avail)return {type:"availability"};
+  if(dk&&opd)return {type:"doctor_opd",doctorKey:dk};
   if(dk&&doctor)return {type:"doctor_info",doctorKey:dk};
 
   if(aiHas(q,"ct scan","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे"))return {type:"diagnostic"};
@@ -759,7 +759,7 @@ async function smartHospitalAssistant(message){
   if(i.type==="availability")return await aiAvailability(message);
   if(i.type==="doctor_opd")return await aiDoctorOpd(message,i.doctorKey);
   if(i.type==="doctor_info")return await aiDoctorInfo(i.doctorKey);
-  if(i.type==="doctor_list"){const d=await aiDoctors();return d.length?"👨‍⚕️ Hospital में available doctors:\n\n"+d.map((x,n)=>(n+1)+". "+aiDoctorText(x)).join("\n\n"):"अभी published doctor information उपलब्ध नहीं है।";}
+  if(i.type==="doctor_list"){const d=await aiDoctors();return d.length?"👨‍⚕️ Hospital में listed doctors:\n\n"+d.map((x,n)=>(n+1)+". "+aiDoctorText(x)).join("\n\n"):"अभी published doctor information उपलब्ध नहीं है।";}
   if(i.type==="diagnostic")return "🩻 Hospital में CT Scan और Digital X-Ray services listed हैं।\n\nAvailability, timing और preparation के लिए hospital से confirm करें। Report की interpretation doctor से कराएँ।";
   if(i.type==="ultrasound")return "🔎 Hospital में Ultrasound (USG) diagnostic service listed है।\n\nAvailability, timing और preparation के लिए hospital से confirm करें।";
   if(i.type==="pathology")return "🧪 Hospital में Pathology / in-house laboratory service listed है।\n\nTest availability, timing और sample preparation hospital से confirm करें।";
