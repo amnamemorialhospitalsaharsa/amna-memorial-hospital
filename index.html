@@ -205,7 +205,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 .ai-send{border:0;border-radius:11px;background:var(--primary);color:#fff;padding:0 14px;font-weight:900;cursor:pointer}
 .ai-note{font-size:10px;color:var(--muted);padding:5px 12px;background:#fff}
 
-</style>
+.ai-action{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#0f7777;color:#fff!important;text-decoration:none!important;font-weight:700;}</style>
   
 <meta name="author" content="Amna Memorial Hospital, Saharsa">
 <meta name="geo.region" content="IN-BR">
@@ -745,7 +745,35 @@ async function smartHospitalAssistant(message){
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
 document.getElementById("aiChatLauncher").addEventListener("click",()=>{aiChat.classList.add("open");aiInput.focus();});
 document.getElementById("aiClose").addEventListener("click",()=>aiChat.classList.remove("open"));
-function addAiMessage(text,type){const el=document.createElement("div");el.className="ai-msg "+type;el.textContent=text;aiMessages.appendChild(el);aiMessages.scrollTop=aiMessages.scrollHeight;}
+function addAiMessage(text,type){
+  const el=document.createElement("div");el.className="ai-msg "+type;
+  const lines=String(text).split("\n");
+  lines.forEach((line,idx)=>{
+    const t=line.trim();
+    if(!t){el.appendChild(document.createElement("br"));return;}
+    el.appendChild(document.createTextNode(line));
+    if(idx<lines.length-1)el.appendChild(document.createElement("br"));
+  });
+  if(type==="bot"){
+    const s=String(text);
+    if(/Appointment के लिए WhatsApp/i.test(s)){
+      const n=(s.match(/\+?91\s*([0-9\s-]{10,})/)||[])[1];
+      const digits=(n||"8051246461").replace(/\D/g,"");
+      const a=document.createElement("a");a.href="https://wa.me/91"+digits;a.target="_blank";a.rel="noopener";a.textContent="📲 WhatsApp Appointment";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+    }
+    if(/Emergency के लिए/i.test(s)){
+      const a=document.createElement("a");a.href="tel:+918294905389";a.textContent="📞 Emergency Call";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+    }
+    if(/Directions के लिए/i.test(s)){
+      const a=document.createElement("a");a.href="https://www.google.com/maps/search/?api=1&query=Amna+Memorial+Hospital+Saharsa+Bihar";a.target="_blank";a.rel="noopener";a.textContent="📍 Directions खोलें";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+    }
+    const profileLine=s.match(/Doctor profile:\s*([^\s]+)/i);
+    if(profileLine){
+      const a=document.createElement("a");a.href=profileLine[1];a.target="_blank";a.rel="noopener";a.textContent="👨‍⚕️ Doctor Profile खोलें";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+    }
+  }
+  aiMessages.appendChild(el);aiMessages.scrollTop=aiMessages.scrollHeight;
+}
 document.getElementById("aiForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const message=aiInput.value.trim();if(!message)return;
