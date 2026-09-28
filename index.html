@@ -205,7 +205,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 .ai-send{border:0;border-radius:11px;background:var(--primary);color:#fff;padding:0 14px;font-weight:900;cursor:pointer}
 .ai-note{font-size:10px;color:var(--muted);padding:5px 12px;background:#fff}
 
-.ai-action{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#0f7777;color:#fff!important;text-decoration:none!important;font-weight:700;}</style>
+.ai-action{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#0f7777;color:#fff!important;text-decoration:none!important;font-weight:700;}.ai-quick{display:flex;flex-wrap:wrap;gap:7px;padding:4px 2px 10px}.ai-quick button{border:1px solid #0f7777;background:#fff;color:#0f6666;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer}.ai-quick button:hover{background:#eefafa}</style>
   
 <meta name="author" content="Amna Memorial Hospital, Saharsa">
 <meta name="geo.region" content="IN-BR">
@@ -528,6 +528,13 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   </div>
   <div class="ai-messages" id="aiMessages">
     <div class="ai-msg bot">नमस्ते! मैं Amna Memorial Hospital का patient information assistant हूँ। आप डॉक्टर, services, appointment या hospital information के बारे में पूछ सकते हैं।</div>
+    <div class="ai-quick">
+      <button type="button" data-ai-q="आज कौन डॉक्टर उपलब्ध है?">👨‍⚕️ आज के डॉक्टर</button>
+      <button type="button" data-ai-q="Appointment कैसे लें?">📲 Appointment</button>
+      <button type="button" data-ai-q="अस्पताल की services क्या हैं?">🏥 Services</button>
+      <button type="button" data-ai-q="अस्पताल का पता क्या है?">📍 Directions</button>
+      <button type="button" data-ai-q="Emergency number क्या है?">🚑 Emergency</button>
+    </div>
   </div>
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
   <form class="ai-form" id="aiForm">
@@ -745,6 +752,7 @@ async function smartHospitalAssistant(message){
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
 document.getElementById("aiChatLauncher").addEventListener("click",()=>{aiChat.classList.add("open");aiInput.focus();});
 document.getElementById("aiClose").addEventListener("click",()=>aiChat.classList.remove("open"));
+document.querySelectorAll("[data-ai-q]").forEach(btn=>btn.addEventListener("click",()=>{aiInput.value=btn.getAttribute("data-ai-q");document.getElementById("aiForm").requestSubmit();}));
 function renderAiMessage(el,text){
   el.textContent="";
   const lines=String(text).split("\n");
@@ -756,7 +764,7 @@ function renderAiMessage(el,text){
   if(/Appointment के लिए WhatsApp/i.test(s)){
     const n=(s.match(/\+?91\s*([0-9\s-]{10,})/)||[])[1];
     const digits=(n||"8051246461").replace(/\D/g,"");
-    const a=document.createElement("a");a.href="https://wa.me/91"+digits;a.target="_blank";a.rel="noopener";a.textContent="📲 WhatsApp Appointment";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+    const a=document.createElement("a");a.href="https://wa.me/91"+digits+"?text="+encodeURIComponent("Namaste Amna Memorial Hospital, mujhe appointment lena hai. Kripya available doctor aur timing bataye.");a.target="_blank";a.rel="noopener";a.textContent="📲 WhatsApp Appointment";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
   }
   if(/Emergency के लिए/i.test(s)){
     const a=document.createElement("a");a.href="tel:+918294905389";a.textContent="📞 Emergency Call";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
