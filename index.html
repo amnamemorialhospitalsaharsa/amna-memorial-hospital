@@ -666,7 +666,10 @@ function aiDateInfo(message) {
   // Use exact normalized tokens so "कल" is never confused with words
   // such as "कलाम". This also handles Hindi/English mixed questions.
   const tokens = normalized.split(" ").filter(Boolean);
-  const tomorrow = tokens.includes("कल") || tokens.includes("tomorrow");
+  // Exact token matching prevents "kal" from matching "kalam".
+  const tomorrow = tokens.includes("कल") ||
+    tokens.includes("tomorrow") ||
+    tokens.includes("kal");
 
   const date = aiIndiaDate(tomorrow ? 1 : 0);
 
