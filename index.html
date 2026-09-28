@@ -537,7 +537,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
     </div>
   </div>
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
-  <form class="ai-form" id="aiForm">
+  <form class="ai-form" id="aiForm" onsubmit="event.preventDefault(); window.handleAiSubmit(event); return false;">
     <input class="ai-input" id="aiInput" autocomplete="off" placeholder="अपना सवाल लिखें..." maxlength="1000" required>
     <button class="ai-send" type="submit">Send</button>
   </form>
@@ -980,7 +980,7 @@ function addAiMessage(text,type){
   if(type==="bot") renderAiMessage(el,text); else el.textContent=text;
   aiMessages.appendChild(el);aiMessages.scrollTop=aiMessages.scrollHeight;
 }
-document.getElementById("aiForm").addEventListener("submit",async e=>{
+window.handleAiSubmit=async function(e){
   e.preventDefault();
   const message=aiInput.value.trim();if(!message)return;
   addAiMessage(message,"user");aiInput.value="";aiInput.disabled=true;
@@ -998,8 +998,8 @@ document.getElementById("aiForm").addEventListener("submit",async e=>{
       pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया hospital से संपर्क करें।";
     }
   }
-  finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}
-});
+  finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}};
+document.getElementById("aiForm").addEventListener("submit",window.handleAiSubmit););
 
 </script>
 </body>
