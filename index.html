@@ -620,10 +620,12 @@ async function smartHospitalAssistant(message){
   const asksOpd=has("opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
   const asksAppointment=has("appointment","अपॉइंटमेंट","booking","बुक","बुकिंग","appointment कैसे","अपॉइंटमेंट कैसे");
   const asksEmergency=has("emergency","इमरजेंसी","आपात","urgent","ambulance");
-  const today=new Date();
+  const indiaDateParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const indiaNow={}; indiaDateParts.forEach(p=>indiaNow[p.type]=p.value);
+  const today=new Date(`${indiaNow.year}-${indiaNow.month}-${indiaNow.day}T00:00:00+05:30`);
   const targetDate=new Date(today);
   if(asksTomorrow)targetDate.setDate(targetDate.getDate()+1);
-  const targetDateStr=targetDate.toISOString().slice(0,10);
+  const targetDateStr=targetDate.toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"});
   const dateLabel=asksTomorrow?"कल":"आज";
 
   if(asksEmergency){
@@ -687,10 +689,13 @@ async function smartHospitalAssistant(message){
              (requestedDoctor==="hena" && names.includes("हिना"));
     });
     if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).order("schedule_date",{ascending:false}).limit(10);
+      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
       if(error)throw error;
-      const rows=data||[];
-      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की OPD जानकारी:\n\n"+(rows.length?rows.map(r=>"• "+r.schedule_date+" — "+(r.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(r.note?"\n  "+r.note:"")).join("\n"):"अभी कोई published OPD schedule उपलब्ध नहीं है।")+"\n\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें");
+      const row=(data||[])[0];
+      if(row){
+        return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
+      }
+      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
     }
   }
 
@@ -713,17 +718,16 @@ async function smartHospitalAssistant(message){
   }
 
   if(asksOpd){
-    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).order("schedule_date",{ascending:false}).limit(50);
+    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(docError)throw docError;
+    if(!docs?.length)return "अभी डॉक्टर/OPD की जानकारी उपलब्ध नहीं है।";
+    const {data:rows,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
     if(error)throw error;
-    const rows=data||[];
-    if(!rows.length)return "अभी OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से OPD timing confirm करें।";
-    const ids=[...new Set(rows.map(x=>x.doctor_id).filter(Boolean))];
-    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
-    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
-    return "उपलब्ध OPD जानकारी:\n\n"+rows.slice(0,12).map(r=>{
-      const d=map.get(String(r.doctor_id));
-      return "• "+(d?.name_hi||d?.name_en||"Doctor")+" — "+(r.status||"Status")+(d?.opd_time?" — "+d.opd_time:"")+(r.note?"\n  "+r.note:"");
-    }).join("\n");
+    const map=new Map((rows||[]).map(r=>[String(r.doctor_id),r]));
+    return "📅 "+dateLabel+" की OPD जानकारी:\n\n"+docs.map((d,i)=>{
+      const r=map.get(String(d.id));
+      return (i+1)+". "+(d.name_hi||d.name_en||"Doctor")+" — "+(r?(r.status||"Status"):"No published entry")+(d.opd_time?" — सामान्य OPD "+d.opd_time:"")+(r?.note?"\n  "+r.note:"");
+    }).join("\n\n");
   }
 
   if(has("service","services","सेवा","इलाज","facility","सुविधा")){
