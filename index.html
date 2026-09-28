@@ -607,8 +607,8 @@ async function smartHospitalAssistant(message){
   const q=message.toLowerCase().trim();
   const norm=q.replace(/[?？!！.,।]/g," ");
   const has=(...words)=>words.some(w=>norm.includes(w));
-  const asksToday=has("आज","today","आज कौन","आज की");
-  const asksTomorrow=has("कल","tomorrow","tomorrow's","कल कौन","कल की");
+  const asksToday=/(^|\s)(आज|today)(\s|$)/i.test(norm) || norm.includes("आज कौन") || norm.includes("आज की");
+  const asksTomorrow=/(^|\s)(कल|tomorrow|tomorrow's)(\s|$)/i.test(norm) || norm.includes("कल कौन") || norm.includes("कल की");
   const asksDoctors=has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक");
   const asksOpd=has("opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
   const asksAppointment=has("appointment","अपॉइंटमेंट","booking","बुक","बुकिंग","appointment कैसे","अपॉइंटमेंट कैसे");
