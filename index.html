@@ -684,6 +684,34 @@ async function smartHospitalAssistant(message){
   }
 
 
+  // Natural-language care/service routing. This provides informational guidance only;
+  // it does not diagnose conditions or prescribe treatment.
+  if(has("महिला डॉक्टर","महिला विशेषज्ञ","lady doctor","female doctor","women doctor","women specialist","pregnancy","गर्भावस्था","प्रेग्नेंसी","स्त्री रोग","gynaecology","gynecology")){
+    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("हिना") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("gynaecology"));
+    if(d)return "👩‍⚕️ महिला/गायनेकोलॉजी consultation के लिए:\n"+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"")+"\n\nOPD availability date-wise बदल सकती है। आज की availability पूछें तो मैं published schedule check कर सकता हूँ।"+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
+  }
+
+  if(has("घुटना","जोड़","जोड़ों","हड्डी","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","orthopedic","orthopaedic","ऑर्थोपेडिक")){
+    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("अबुल") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("orthop"));
+    return "🦴 हड्डी/जोड़/ऑर्थोपेडिक समस्या के लिए hospital में Orthopaedic Surgery और Plaster Services उपलब्ध हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"Doctor availability के लिए hospital से confirm करें।")+"\n\nयह assistant diagnosis या treatment prescribe नहीं करता। चोट/गंभीर स्थिति में medical evaluation कराएँ।";
+  }
+
+  if(has("ऑपरेशन","सर्जरी","surgery","operation","laparoscopy","laparoscopic","लेप्रोस्कोपिक","लेज़र","laser surgery","सर्जन")){
+    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("तारिक") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("laparoscopic"));
+    return "🏥 Surgical consultation के लिए hospital में General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"")+"\n\nकिसी operation की suitability doctor examination के बाद तय करते हैं।";
+  }
+
+  if(has("अस्पताल खुला","hospital open","open today","आज अस्पताल","hospital timing","अस्पताल कब खुला")){
+    return "🏥 Hospital की Emergency & Casualty service 24×7 listed है।\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है। आप पूछ सकते हैं: “आज कौन डॉक्टर उपलब्ध है?”";
+  }
+
+
   if(asksDoctors && !asksToday && !asksTomorrow){
     const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
     if(error)throw error;
@@ -718,33 +746,6 @@ async function smartHospitalAssistant(message){
       if(!rows.length)return (doctor.name_hi||doctor.name_en)+" की कोई published OPD schedule entry उपलब्ध नहीं है।";
       return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की OPD जानकारी:\n\n"+rows.map(r=>"• "+r.schedule_date+" — "+(r.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(r.note?"\n  "+r.note:"")).join("\n");
     }
-  }
-
-  // Natural-language care/service routing. This provides informational guidance only;
-  // it does not diagnose conditions or prescribe treatment.
-  if(has("महिला डॉक्टर","महिला विशेषज्ञ","lady doctor","female doctor","women doctor","women specialist","pregnancy","गर्भावस्था","प्रेग्नेंसी","स्त्री रोग","gynaecology","gynecology")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("हिना") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("gynaecology"));
-    if(d)return "👩‍⚕️ महिला/गायनेकोलॉजी consultation के लिए:\n"+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"")+"\n\nOPD availability date-wise बदल सकती है। आज की availability पूछें तो मैं published schedule check कर सकता हूँ।"+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
-  }
-
-  if(has("घुटना","जोड़","जोड़ों","हड्डी","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","orthopedic","orthopaedic","ऑर्थोपेडिक")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("अबुल") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("orthop"));
-    return "🦴 हड्डी/जोड़/ऑर्थोपेडिक समस्या के लिए hospital में Orthopaedic Surgery और Plaster Services उपलब्ध हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"Doctor availability के लिए hospital से confirm करें।")+"\n\nयह assistant diagnosis या treatment prescribe नहीं करता। चोट/गंभीर स्थिति में medical evaluation कराएँ।";
-  }
-
-  if(has("ऑपरेशन","सर्जरी","surgery","operation","laparoscopy","laparoscopic","लेप्रोस्कोपिक","लेज़र","laser surgery","सर्जन")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("तारिक") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("laparoscopic"));
-    return "🏥 Surgical consultation के लिए hospital में General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"")+"\n\nकिसी operation की suitability doctor examination के बाद तय करते हैं।";
-  }
-
-  if(has("अस्पताल खुला","hospital open","open today","आज अस्पताल","hospital timing","अस्पताल कब खुला")){
-    return "🏥 Hospital की Emergency & Casualty service 24×7 listed है।\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है। आप पूछ सकते हैं: “आज कौन डॉक्टर उपलब्ध है?”";
   }
 
   if(asksOpd){
