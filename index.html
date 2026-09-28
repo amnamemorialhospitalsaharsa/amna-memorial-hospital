@@ -1118,7 +1118,8 @@ async function smartHospitalAssistant(message) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": SUPABASE_PUBLISHABLE_KEY
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
           },
           body: JSON.stringify({ message })
         }
@@ -1130,6 +1131,15 @@ async function smartHospitalAssistant(message) {
       if (liveResponse.ok && liveData?.answer) {
         return liveData.answer;
       }
+    } catch {}
+
+    // If the Edge Function gateway is temporarily unavailable, use the
+    // same published OPD table directly. Never turn "no row" into
+    // "Unavailable".
+    try {
+      const key = aiDoctorKey(message);
+      if (key) return await aiDoctorAvailability(message, key);
+      return await aiAvailability(message);
     } catch {}
   }
 
