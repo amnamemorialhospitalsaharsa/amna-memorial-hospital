@@ -633,11 +633,10 @@ async function smartHospitalAssistant(message){
   }
 
   if(asksAppointment){
-    const {data,error}=await sb.from("whatsapp_settings").select("*").limit(1).maybeSingle();
-    if(error)throw error;
-    const raw=String(data?.appointment_number||data?.general_number||"918051246461").replace(/[^0-9]/g,"");
-    const number=raw.startsWith("91")?raw:"91"+raw.replace(/^0+/,"");
-    return "📲 Appointment के लिए WhatsApp:\n+"+number+"\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
+    // Appointment contact is public hospital information; keep this quick action
+    // independent of database/RLS so it works reliably on both mobile and PC.
+    const number="918051246461";
+    return "📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
   }
 
   if((asksToday||asksTomorrow) && (asksDoctors||asksOpd)){
@@ -794,7 +793,17 @@ document.getElementById("aiForm").addEventListener("submit",async e=>{
   addAiMessage("जानकारी देखी जा रही है…","bot");
   const pending=aiMessages.lastElementChild;
   try{renderAiMessage(pending,await smartHospitalAssistant(message));}
-  catch(err){pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया hospital से संपर्क करें।";}
+  catch(err){
+    // Public quick actions must still work even if a Supabase data query fails.
+    const q=message.toLowerCase();
+    if(/appointment|अपॉइंटमेंट|बुकिंग|बुक/.test(q)){
+      renderAiMessage(pending,"📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।");
+    }else if(/emergency|इमरजेंसी|आपात/.test(q)){
+      renderAiMessage(pending,"🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।");
+    }else{
+      pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया hospital से संपर्क करें।";
+    }
+  }
   finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}
 });
 
