@@ -845,6 +845,39 @@ async function smartHospitalAssistant(message){
 
 
 
+
+  // Phase 2: expanded patient Q&A intents (informational only; no diagnosis/prescription).
+  if(has("appointment लेने के लिए","appointment ke liye","appointment कैसे लें","appointment kaise le","appointment lena hai","अपॉइंटमेंट कैसे","बुकिंग कैसे","booking kaise")){
+    return "📲 Appointment लेने के लिए:\n\nWhatsApp: +91 80512 46461\n\nकृपया अपना नाम, मोबाइल नंबर, जिस doctor से मिलना है, पसंदीदा तारीख/समय और समस्या का संक्षिप्त विवरण भेजें। Final appointment confirmation hospital team द्वारा दी जाएगी।";
+  }
+  if(has("अबुल कलाम से appointment","abul kalam se appointment","अबुल कलाम का appointment","abul kalam appointment")){
+    return "👨‍⚕️ डॉ. अबुल कलाम (Orthopaedic Surgeon) से appointment के लिए WhatsApp करें:\n+91 80512 46461\n\nअपना नाम, मोबाइल नंबर, पसंदीदा तारीख/समय और समस्या का संक्षिप्त विवरण भेजें। Doctor availability date-wise confirm होगी।";
+  }
+  if(has("हिना फारूकी किस","हिना फ़ारूक़ी किस","hena farooqui kis","महिला डॉक्टर किस बीमारी","women doctor kis","pregnancy doctor","pregnancy के लिए")){
+    return "👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी Obstetrician & Gynaecologist हैं। Pregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है।\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
+  }
+  if(has("तारिक कौन-कौन","तारिक कौन कौन","tarique kya surgery","tariq kya surgery","तारिक कौन सी surgery","कौन-कौन सी surgery करते")){
+    return "👨‍⚕️ डॉ. प्रो0 मो0 तारिक General / Laparoscopic / Laser Surgeon हैं। Hospital में General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nकिसी particular operation की suitability doctor examination के बाद तय करते हैं।";
+  }
+  if(has("कौन-कौन से test","कौन कौन से test","kaun kaun se test","tests available","कौन से जांच","कौन-कौन सी जांच")){
+    return "🩻 Hospital में listed diagnostic services:\n\n• CT Scan\n• Digital X-Ray\n• Ultrasound / USG\n• Pathology / Blood Tests\n• BMD Test\n\nAvailability, timing और preparation के लिए hospital से confirm करें।";
+  }
+  if(has("पहली बार","पहली बार अस्पताल","first time","first visit","पहली बार hospital")){
+    return "🏥 पहली बार अस्पताल आने पर:\n\n1. Patient Registration कराएँ।\n2. अपनी समस्या और पुराने medical reports साथ रखें।\n3. संबंधित doctor/OPD की availability confirm करें।\n4. Consultation के बाद doctor आगे की जांच या treatment की सलाह देंगे।\n\nEmergency में सीधे Emergency & Casualty से संपर्क करें।";
+  }
+  if(has("emergency admission","emergency में admission","इमरजेंसी में admission","emergency me admission")){
+    return "🚑 Emergency में पहले Emergency & Casualty desk से संपर्क करें। Medical team patient की स्थिति का assessment करेगी और जरूरत के अनुसार admission/IPD का निर्णय लिया जाएगा।\n\nगंभीर स्थिति में तुरंत emergency care लें।";
+  }
+  if(has("operation से पहले","operation se pehle","surgery se pehle","सर्जरी से पहले","pre operative","pre-op")){
+    return "🏥 Operation से पहले doctor की pre-operative evaluation और आवश्यक tests/assessment किए जा सकते हैं। Fasting, medicines और अन्य preparation के निर्देश treating doctor/medical team से लें।\n\nकिसी specific operation के लिए doctor की instructions follow करें।";
+  }
+  if(has("operation के बाद","operation ke baad","surgery ke baad","सर्जरी के बाद","post operative","post-op")){
+    return "🏥 Operation के बाद hospital की Pre & Post-Operative Care service के अनुसार follow-up और recovery instructions दिए जाते हैं। Dressing, medicines, diet, activity और follow-up की specific instructions treating doctor से लें।";
+  }
+  if(has("कौन-कौन सी surgery","कौन कौन सी surgery","kaun kaun si surgery","hospital me kaun si surgery","अस्पताल में कौन-कौन सी surgery")){
+    return "🏥 Hospital में listed surgical services:\n\n• General Surgery\n• Laparoscopic Surgery\n• Laser Surgery\n• Major Surgery\n• Minor Surgery\n• Orthopaedic Surgery\n• Thermal Ablation\n• OT / surgical support\n\nकिसी procedure की suitability doctor की clinical evaluation के बाद तय होती है।";
+  }
+
   const requestedDoctor =
     norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
     norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
