@@ -665,6 +665,24 @@ async function smartHospitalAssistant(message){
     return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
   }
 
+  if(asksOpd && asksDoctors){
+    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(docError)throw docError;
+    const doctor=docs?.find(d=>{
+      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
+      return (has("अबुल","abul","kalam","कलाम") && names.includes("अबुल")) ||
+             (has("तारिक","tarique","tariq","मो","तारिक") && names.includes("तारिक")) ||
+             (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && names.includes("हिना"));
+    });
+    if(doctor){
+      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).order("schedule_date",{ascending:false}).limit(10);
+      if(error)throw error;
+      const rows=data||[];
+      if(!rows.length)return (doctor.name_hi||doctor.name_en)+" की कोई published OPD schedule entry उपलब्ध नहीं है।";
+      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की OPD जानकारी:\n\n"+rows.map(r=>"• "+r.schedule_date+" — "+(r.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(r.note?"\n  "+r.note:"")).join("\n");
+    }
+  }
+
   if(asksOpd){
     const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).order("schedule_date",{ascending:false}).limit(50);
     if(error)throw error;
