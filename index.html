@@ -635,11 +635,97 @@ async function smartHospitalAssistant(message){
     return "🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
   }
 
+  // Extended patient-intent routing: appointment changes, registration, diagnostics,
+  // admission, surgery preparation, pharmacy and facility guidance.
+  // Informational only; do not diagnose or prescribe treatment.
+  if(has("appointment cancel","cancel appointment","अपॉइंटमेंट कैंसल","अपॉइंटमेंट रद्द","बुकिंग रद्द","appointment reschedule","reschedule appointment","appointment change","तारीख बदल","समय बदल","अपॉइंटमेंट बदल")){
+    return "📅 Appointment को cancel/reschedule या date/time change करने के लिए hospital appointment team से WhatsApp पर संपर्क करें:\n+91 80512 46461\n\nकृपया patient name, mobile number और requested change भेजें। Final confirmation hospital team द्वारा दी जाएगी।";
+  }
+
   if(asksAppointment){
     // Appointment contact is public hospital information; keep this quick action
     // independent of database/RLS so it works reliably on both mobile and PC.
     const number="918051246461";
     return "📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
+  }
+
+  // Appointment preparation / patient registration
+  if(has("appointment में क्या चाहिए","appointment ke liye kya chahiye","appointment details","बुकिंग के लिए क्या चाहिए","अपॉइंटमेंट के लिए क्या चाहिए")){
+    return "📋 Appointment request के लिए patient का नाम, mobile number, preferred doctor/date/time और समस्या का brief description देना उपयोगी है।\n\nFinal requirements/confirmation hospital team से verify करें।";
+  }
+
+  if(has("patient registration","registration","पंजीकरण","रजिस्ट्रेशन","मरीज पंजीकरण","patient register")){
+    return "📝 Patient Registration website के Patient Registration section से किया जा सकता है।\n\nअगर registration में कोई समस्या हो तो hospital team से +91 80512 46461 पर संपर्क करें।";
+  }
+
+  // Diagnostics: route to the relevant listed service without interpreting results.
+  if(has("ct scan","ct","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे")){
+    return "🩻 Diagnostic service: hospital में CT Scan और Digital X-Ray services listed हैं।\n\nTest की availability, timing और preparation के लिए hospital से confirm करें। Report की medical interpretation doctor से कराएँ।";
+  }
+
+  if(has("ultrasound","usg","अल्ट्रासाउंड","यूएसजी","sonography","सोनोग्राफी")){
+    return "🔎 Hospital में Ultrasound (USG) diagnostic service listed है।\n\nAvailability, timing और किसी preparation की आवश्यकता के लिए hospital से confirm करें।";
+  }
+
+  if(has("pathology","lab test","laboratory","blood test","blood test","पैथोलॉजी","लैब","ब्लड टेस्ट","जांच","जाँच")){
+    return "🧪 Hospital में Pathology / in-house laboratory service listed है।\n\nकौन-सा test उपलब्ध है, timing और sample preparation के लिए hospital से confirm करें।";
+  }
+
+  if(has("bmd","bone mineral density","बीएमडी","हड्डी की जांच","bone density")){
+    return "🦴 Hospital में BMD Test (Bone Mineral Density assessment) listed है।\n\nTest availability और timing के लिए hospital से confirm करें।";
+  }
+
+  // Admission / inpatient care
+  if(has("admission","admit","admitted","ipd","आईपीडी","भर्ती","दाखिला","hospital admission")){
+    return "🏥 Hospital में IPD (inpatient admission and care) service listed है।\n\nAdmission की eligibility, bed availability, documents और charges hospital team से confirm करें। Emergency में पहले emergency desk से संपर्क करें।";
+  }
+
+  if(has("icu","आईसीयू","critical care","क्रिटिकल केयर")){
+    return "🫀 Hospital में ICU / Critical Care support listed है।\n\nICU bed availability और admission decision hospital medical team से confirm करें। गंभीर स्थिति में तुरंत emergency care लें।";
+  }
+
+  if(has("nicu","एनआईसीयू","newborn","नवजात","new born")){
+    return "👶 Hospital में NICU / newborn intensive care support listed है।\n\nNICU availability और admission requirements hospital team से तुरंत confirm करें।";
+  }
+
+  // Surgery information and preparation
+  if(has("surgery process","operation process","सर्जरी प्रक्रिया","ऑपरेशन प्रक्रिया","operation की तैयारी","operation ke liye","surgery preparation","सर्जरी की तैयारी")){
+    return "🏥 Hospital में General Surgery, Laparoscopic Surgery, Laser Surgery, Major Surgery और Minor Surgery services listed हैं।\n\nकिसी operation की आवश्यकता, suitability और preparation doctor examination के बाद तय करते हैं। Pre-operative instructions hospital/doctor से confirm करें।";
+  }
+
+  if(has("laparoscopy","laparoscopic","लेप्रोस्कोपी","लैप्रोस्कोपिक","laser surgery","लेजर सर्जरी")){
+    return "🔬 Hospital में Laparoscopic Surgery और Laser Surgery services listed हैं।\n\nकौन-सी procedure उपयुक्त है, यह doctor examination के बाद तय होता है। Consultation के लिए appointment ले सकते हैं।";
+  }
+
+  if(has("pre operative","preoperative","pre op","प्री ऑपरेटिव","post operative","postoperative","पोस्ट ऑपरेटिव","ऑपरेशन के बाद")){
+    return "🩺 Hospital में Pre & Post-Operative Care service listed है।\n\nआपके specific operation के लिए preparation और recovery instructions treating doctor/hospital team से लें।";
+  }
+
+  // Trauma, wound and orthopaedic support
+  if(has("trauma","ट्रॉमा","injury","चोट","wound","घाव","wound care","वाउंड केयर")){
+    return "🚑 Hospital में Trauma Care और Wound Care services listed हैं।\n\nगंभीर चोट, भारी bleeding, बेहोशी या अन्य emergency signs में तुरंत emergency care लें।";
+  }
+
+  if(has("plaster","प्लास्टर","cast","फ्रैक्चर का प्लास्टर","fracture plaster")){
+    return "🦴 Hospital में Plaster Services और Orthopaedic Surgery services listed हैं।\n\nFracture/injury का assessment doctor द्वारा कराया जाना चाहिए; plaster की आवश्यकता और type doctor तय करते हैं।";
+  }
+
+  // Pharmacy / medical supplies
+  if(has("pharmacy","medical shop","दवा की दुकान","फार्मेसी","मेडिसिन","medicine","दवा")){
+    return "💊 Hospital में Pharmacy service listed है।\n\nदवा की availability और timing के लिए hospital pharmacy से confirm करें। यह assistant prescription या medicine dose नहीं बताता।";
+  }
+
+  if(has("surgical shop","सर्जिकल शॉप","surgical supplies","medical supplies","सर्जिकल सामान")){
+    return "🛒 Hospital में Surgical Shop / surgical and medical supplies service listed है।\n\nकिस item की availability है, यह hospital team से confirm करें।";
+  }
+
+  // General patient guidance / first visit
+  if(has("first visit","पहली बार","पहली विजिट","new patient","नया मरीज","पहली बार अस्पताल")){
+    return "👤 पहली visit के लिए appointment/OPD availability पहले confirm करना उपयोगी है। अगर पुराने reports, prescriptions या test reports हैं तो उन्हें साथ रखें।\n\nRegistration/appointment के लिए website या +91 80512 46461 पर संपर्क करें।";
+  }
+
+  if(has("report","reports","रिपोर्ट","test result","जांच रिपोर्ट","जाँच रिपोर्ट")){
+    return "📄 Test reports की clinical interpretation doctor से कराएँ। Hospital में Pathology, CT Scan, Digital X-Ray, Ultrasound और BMD जैसी diagnostic services listed हैं।\n\nकिस report/service की जानकारी चाहिए, उसका नाम बताइए।";
   }
 
   if((asksToday||asksTomorrow) && (asksDoctors||asksOpd)){
@@ -783,7 +869,7 @@ async function smartHospitalAssistant(message){
     return "📢 हाल की hospital updates:\n\n"+data.map(x=>"• "+(x.title_hi||x.title_en||"Update")+(x.body_hi?"\n"+x.body_hi:"")).join("\n\n");
   }
 
-  return "मैं hospital की जानकारी देने वाला Smart Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• कौन-कौन से डॉक्टर हैं?\n• डॉ. अबुल कलाम की OPD कब है?\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• अस्पताल में कौन-कौन सी services हैं?\n• Appointment कैसे लें?\n• Emergency number क्या है?\n• अस्पताल का पता/लोकेशन क्या है?\n• Hospital की latest update क्या है?";
+  return "मैं Amna Memorial Hospital का Smart Patient Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• किसी doctor की OPD कब है?\n• मेरी समस्या के लिए कौन-सा department/doctor relevant है?\n• Appointment कैसे लें या reschedule करें?\n• Patient registration कैसे करें?\n• CT Scan / X-Ray / Ultrasound / Pathology / BMD की जानकारी\n• Admission / IPD / ICU / NICU की जानकारी\n• Surgery / Laparoscopy / Laser Surgery की जानकारी\n• Pharmacy / Surgical Shop की जानकारी\n• अस्पताल का पता, Directions या Emergency number\n\nमैं diagnosis या prescription नहीं देता; medical decision doctor की consultation के बाद लें।";
 }
 
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
