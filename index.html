@@ -556,10 +556,13 @@ window.sendAiDirect=async function(){
     const n=message.toLowerCase().replace(/[़ًٌٍَُِّْٰ]/g,"");
     if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
       pending.textContent="👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\nObstetrician & Gynaecologist\n\nPregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
+    }else if(typeof window.smartHospitalAssistant==="function"){
+      const localAnswer=await window.smartHospitalAssistant(message);
+      pending.textContent=localAnswer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
     }else{
       const res=await fetch("https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",{
         method:"POST",
-        headers:{"Content-Type":"application/json","apikey":"sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X","Authorization":"Bearer sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X"},
+        headers:{"Content-Type":"application/json","apikey":"sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X"},
         body:JSON.stringify({message:message})
       });
       const data=await res.json();
