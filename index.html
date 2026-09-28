@@ -639,7 +639,7 @@ async function smartHospitalAssistant(message){
   if(has("appointment","अपॉइंटमेंट","booking","बुक","नंबर","number","contact","संपर्क","whatsapp","व्हाट्सएप")){
     const {data,error}=await sb.from("whatsapp_settings").select("*").limit(1).maybeSingle();
     if(error)throw error;
-    const number=data?.appointment_number||data?.general_number||"918051246461";
+    const raw=String(data?.appointment_number||data?.general_number||"918051246461").replace(/[^0-9]/g,""); const number=raw.startsWith("91")?raw:"91"+raw.replace(/^0+/,"");
     return "Appointment के लिए WhatsApp पर संपर्क करें: +"+String(number).replace(/[^0-9]/g,"")+"\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
   }
 
