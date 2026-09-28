@@ -539,11 +539,41 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
   <form class="ai-form" id="aiForm" onsubmit="event.preventDefault(); window.handleAiSubmit(event); return false;">
     <input class="ai-input" id="aiInput" autocomplete="off" placeholder="अपना सवाल लिखें..." maxlength="1000" required>
-    <button class="ai-send" id="aiSend" type="button" onclick="return window.sendAiNow ? window.sendAiNow() : false;">Send</button>
+    <button class="ai-send" id="aiSend" type="button" onclick="return window.sendAiDirect ? window.sendAiDirect() : false;">Send</button>
   </form>
 </div>
 
 
+<script>
+window.sendAiDirect=async function(){
+  const input=document.getElementById("aiInput"), box=document.getElementById("aiMessages");
+  if(!input||!box)return false;
+  const message=input.value.trim(); if(!message)return false;
+  const user=document.createElement("div"); user.className="ai-msg user"; user.textContent=message; box.appendChild(user);
+  input.value=""; input.disabled=true;
+  const pending=document.createElement("div"); pending.className="ai-msg bot"; pending.textContent="जानकारी देखी जा रही है…"; box.appendChild(pending); box.scrollTop=box.scrollHeight;
+  try{
+    const n=message.toLowerCase().replace(/[़ًٌٍَُِّْٰ]/g,"");
+    if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
+      pending.textContent="👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\nObstetrician & Gynaecologist\n\nPregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
+    }else{
+      const res=await fetch("https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":"sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X","Authorization":"Bearer sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X"},
+        body:JSON.stringify({message:message})
+      });
+      const data=await res.json();
+      if(!res.ok)throw new Error(data?.error||"AI request failed");
+      pending.textContent=data?.answer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
+    }
+  }catch(err){
+    pending.textContent="अभी AI से जवाब प्राप्त नहीं हो सका। कृपया दोबारा प्रयास करें।";
+  }finally{
+    input.disabled=false; input.focus(); box.scrollTop=box.scrollHeight;
+  }
+  return false;
+};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
