@@ -554,7 +554,13 @@ window.sendAiDirect=async function(){
   const pending=document.createElement("div"); pending.className="ai-msg bot"; pending.textContent="जानकारी देखी जा रही है…"; box.appendChild(pending); box.scrollTop=box.scrollHeight;
   try{
     const n=message.toLowerCase().replace(/[़ًٌٍَُِّْٰ]/g,"");
-    if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
+    if(
+      (n.includes("आज") || n.includes("today")) &&
+      (n.includes("available") || n.includes("availability") || n.includes("उपलब्ध") || n.includes("बैठ")) &&
+      (n.includes("doctor") || n.includes("dr ") || n.includes("dr.") || n.includes("डॉक्टर") || n.includes("डॉ"))
+    ){
+      pending.textContent="📅 आज के published OPD schedule के अनुसार किसी doctor को Available के रूप में publish नहीं किया गया है।\n\nकृपया hospital से आज की actual availability confirm करें।";
+    }else if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
       pending.textContent="👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\nObstetrician & Gynaecologist\n\nPregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
     }else if(
       (n.includes("तारिक") || n.includes("tarique") || n.includes("tariq")) &&
