@@ -539,55 +539,11 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
   <form class="ai-form" id="aiForm" onsubmit="event.preventDefault(); window.handleAiSubmit(event); return false;">
     <input class="ai-input" id="aiInput" autocomplete="off" placeholder="अपना सवाल लिखें..." maxlength="1000" required>
-    <button class="ai-send" id="aiSend" type="button" onclick="return window.sendAiDirect ? window.sendAiDirect() : false;">Send</button>
+    <button class="ai-send" id="aiSend" type="button" onclick="return window.handleAiSubmit ? window.handleAiSubmit(event) : false;">Send</button>
   </form>
 </div>
 
 
-<script>
-window.sendAiDirect=async function(){
-  const input=document.getElementById("aiInput"), box=document.getElementById("aiMessages");
-  if(!input||!box)return false;
-  const message=input.value.trim(); if(!message)return false;
-  const user=document.createElement("div"); user.className="ai-msg user"; user.textContent=message; box.appendChild(user);
-  input.value=""; input.disabled=true;
-  const pending=document.createElement("div"); pending.className="ai-msg bot"; pending.textContent="जानकारी देखी जा रही है…"; box.appendChild(pending); box.scrollTop=box.scrollHeight;
-  try{
-    const n=message.toLowerCase().replace(/[़ًٌٍَُِّْٰ]/g,"");
-    if(
-      (n.includes("आज") || n.includes("today")) &&
-      (n.includes("available") || n.includes("availability") || n.includes("उपलब्ध") || n.includes("बैठ")) &&
-      (n.includes("doctor") || n.includes("dr ") || n.includes("dr.") || n.includes("डॉक्टर") || n.includes("डॉ"))
-    ){
-      pending.textContent="📅 आज के published OPD schedule के अनुसार किसी doctor को Available के रूप में publish नहीं किया गया है।\n\nकृपया hospital से आज की actual availability confirm करें।";
-    }else if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
-      pending.textContent="👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\nObstetrician & Gynaecologist\n\nPregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
-    }else if(
-      (n.includes("तारिक") || n.includes("tarique") || n.includes("tariq")) &&
-      (n.includes("surgery") || n.includes("सर्जरी") || n.includes("operation") || n.includes("ऑपरेशन"))
-    ){
-      pending.textContent="👨‍⚕️ डॉ. प्रो0 मो0 तारिक\nGeneral / Laparoscopic / Laser Surgeon\n\n🏥 प्रमुख surgical services:\n• General Surgery\n• Laparoscopic Surgery\n• Laser Surgery\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nकिसी particular operation/procedure की suitability doctor की clinical examination के बाद तय की जाती है।";
-    }else if(typeof window.smartHospitalAssistant==="function"){
-      const localAnswer=await window.smartHospitalAssistant(message);
-      pending.textContent=localAnswer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
-    }else{
-      const res=await fetch("https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","apikey":"sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X"},
-        body:JSON.stringify({message:message})
-      });
-      const data=await res.json();
-      if(!res.ok)throw new Error(data?.error||"AI request failed");
-      pending.textContent=data?.answer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
-    }
-  }catch(err){
-    pending.textContent="अभी AI से जवाब प्राप्त नहीं हो सका। कृपया दोबारा प्रयास करें।";
-  }finally{
-    input.disabled=false; input.focus(); box.scrollTop=box.scrollHeight;
-  }
-  return false;
-};
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
@@ -657,415 +613,220 @@ document.addEventListener("keydown",e=>{
 });
 window.addEventListener("scroll",()=>topBtn.classList.toggle("show",window.scrollY>450));topBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));loadHospitalData();
 
+// ===== Amna Hospital AI: centralized routing =====
+const AI_CONFIG={
+  appointmentWhatsApp:"918051246461",
+  emergencyPhone:"+918294905389",
+  mapsUrl:"https://www.google.com/maps/search/?api=1&query=Amna+Memorial+Hospital+Saharsa+Bihar"
+};
+
+const AI_DOCTOR_ALIASES={
+  abul:["अबुल कलाम","abul kalam","abul","kalam"],
+  tariq:["मो तारिक","मो. तारिक","मो0 तारिक","तारिक","tariq","tarique"],
+  hena:["हिना फारूकी","हिना फ़ारूक़ी","हिना फारूक","हिना फ़ारूक","hena farooqui","hena"]
+};
+
+function aiNormalize(v){
+  return String(v??"").toLowerCase().normalize("NFKC")
+    .replace(/[़ًٌٍَُِّْٰ]/g,"").replace(/[?？!！.,।,;:]/g," ")
+    .replace(/\s+/g," ").trim();
+}
+function aiHas(message,...terms){
+  const q=aiNormalize(message);
+  return terms.some(t=>q.includes(aiNormalize(t)));
+}
+function aiDoctorKey(message){
+  const q=aiNormalize(message);
+  for(const key of Object.keys(AI_DOCTOR_ALIASES)){
+    if(AI_DOCTOR_ALIASES[key].some(a=>q.includes(aiNormalize(a))))return key;
+  }
+  return null;
+}
+function aiIndiaDate(offset){
+  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const p={};parts.forEach(x=>p[x.type]=x.value);
+  const d=new Date(p.year+"-"+p.month+"-"+p.day+"T00:00:00+05:30");
+  d.setDate(d.getDate()+(offset||0));
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function aiDateInfo(message){
+  const tomorrow=aiHas(message,"कल","tomorrow");
+  return {date:aiIndiaDate(tomorrow?1:0),label:tomorrow?"कल":"आज"};
+}
+async function aiDoctors(){
+  const r=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug")
+    .eq("is_active",true).eq("is_published",true).order("sort_order");
+  if(r.error)throw r.error;return r.data||[];
+}
+async function aiSchedule(date,doctorId){
+  let q=sb.from("opd_schedule").select("doctor_id,schedule_date,status,note,is_published")
+    .eq("is_published",true).eq("schedule_date",date);
+  if(doctorId)q=q.eq("doctor_id",doctorId);
+  const r=await q; if(r.error)throw r.error;return r.data||[];
+}
+async function aiServices(){
+  const r=await sb.from("services").select("title_hi,title_en,short_description,page_slug")
+    .eq("is_active",true).eq("is_published",true).order("sort_order");
+  if(r.error)throw r.error;return r.data||[];
+}
+function aiFindDoctor(doctors,key){
+  if(!key)return null;
+  return doctors.find(d=>{
+    const n=aiNormalize((d.name_hi||"")+" "+(d.name_en||""));
+    return AI_DOCTOR_ALIASES[key].some(a=>n.includes(aiNormalize(a))) ||
+      (key==="abul"&&n.includes("अबुल"))||(key==="tariq"&&n.includes("तारिक"))||(key==="hena"&&n.includes("हिना"));
+  })||null;
+}
+function aiDoctorText(d){
+  if(!d)return "Doctor की जानकारी उपलब्ध नहीं है।";
+  return "👨‍⚕️ "+(d.name_hi||d.name_en||"Doctor")+"\n"+
+    (d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+
+    (d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"");
+}
+async function aiAvailability(message){
+  const di=aiDateInfo(message),doctors=await aiDoctors(),rows=await aiSchedule(di.date);
+  if(!rows.length)return "📅 "+di.label+" ("+di.date+") के लिए कोई published OPD schedule उपलब्ध नहीं है।\n\nकृपया hospital से actual availability confirm करें।";
+  const available=rows.filter(r=>String(r.status||"").toLowerCase()==="available");
+  if(!available.length)return "📅 "+di.label+" के published OPD schedule के अनुसार किसी doctor को Available के रूप में publish नहीं किया गया है।\n\nकृपया hospital से actual availability confirm करें।";
+  return "📅 "+di.label+" उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{
+    const d=doctors.find(x=>String(x.id)===String(r.doctor_id));
+    return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?"\n🕐 OPD: "+d.opd_time:"")+(r.note?"\n"+r.note:"");
+  }).join("\n\n");
+}
+async function aiDoctorOpd(message,key){
+  const di=aiDateInfo(message),doctors=await aiDoctors(),d=aiFindDoctor(doctors,key);
+  if(!d)return "इस doctor की जानकारी अभी उपलब्ध नहीं है।";
+  const rows=await aiSchedule(di.date,d.id);
+  if(!rows.length)return aiDoctorText(d)+"\n\n"+di.label+" ("+di.date+") के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया hospital से availability confirm करें।";
+  const r=rows[0];
+  return aiDoctorText(d)+"\n\n📅 "+di.label+" की OPD:\n• "+r.schedule_date+" — "+(r.status||"Status")+(r.note?"\n"+r.note:"");
+}
+async function aiDoctorInfo(key){
+  const d=aiFindDoctor(await aiDoctors(),key);
+  if(!d)return "इस doctor की जानकारी अभी उपलब्ध नहीं है।";
+  return aiDoctorText(d)+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
+}
+async function aiServicesAnswer(message){
+  const data=await aiServices(),q=aiNormalize(message);
+  const match=data.find(s=>q.includes(aiNormalize((s.title_hi||"")+" "+(s.title_en||""))));
+  if(match)return "🏥 "+(match.title_hi||match.title_en)+"\n"+(match.short_description||"");
+  if(!data.length)return "अभी services की जानकारी उपलब्ध नहीं है।";
+  return "🏥 Hospital की listed services:\n\n"+data.map((s,i)=>(i+1)+". "+(s.title_hi||s.title_en)+(s.short_description?" — "+s.short_description:"")).join("\n");
+}
+
+function aiIntent(message){
+  const q=aiNormalize(message),dk=aiDoctorKey(message);
+  if(aiHas(q,"emergency","इमरजेंसी","आपात","ambulance","urgent"))return {type:"emergency"};
+  if(aiHas(q,"reschedule","cancel appointment","appointment change","date change","समय बदल","तारीख बदल","अपॉइंटमेंट रद्द","अपॉइंटमेंट कैंसल"))return {type:"appointment_change"};
+  if(aiHas(q,"appointment","अपॉइंटमेंट","booking","बुकिंग","appointment लेना","appointment kaise","अपॉइंटमेंट कैसे"))return {type:"appointment"};
+
+  const today=aiHas(q,"आज","today"),tomorrow=aiHas(q,"कल","tomorrow");
+  const doctor=aiHas(q,"doctor","doctors","डॉक्टर","डाक्टर","डॉ","चिकित्सक","dr");
+  const avail=aiHas(q,"available","availability","उपलब्ध","बैठ","बैठेंगे","बैठते","sitting");
+  const opd=aiHas(q,"opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
+  if((today||tomorrow)&&doctor&&avail)return {type:"availability"};
+  if(dk&&opd&&(today||tomorrow||true))return {type:"doctor_opd",doctorKey:dk};
+  if(dk&&doctor)return {type:"doctor_info",doctorKey:dk};
+
+  if(aiHas(q,"ct scan","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे"))return {type:"diagnostic"};
+  if(aiHas(q,"ultrasound","usg","अल्ट्रासाउंड","यूएसजी","sonography","सोनोग्राफी"))return {type:"ultrasound"};
+  if(aiHas(q,"pathology","laboratory","lab test","blood test","पैथोलॉजी","लैब","ब्लड टेस्ट"))return {type:"pathology"};
+  if(aiHas(q,"bmd","bone mineral density","बीएमडी","bone density"))return {type:"bmd"};
+  if(aiHas(q,"nicu","एनआईसीयू","newborn","नवजात"))return {type:"nicu"};
+  if(aiHas(q,"icu","आईसीयू","critical care","क्रिटिकल केयर"))return {type:"icu"};
+  if(aiHas(q,"admission","admit","ipd","आईपीडी","भर्ती","दाखिला"))return {type:"admission"};
+  if(aiHas(q,"pharmacy","फार्मेसी","medicine","दवा","medical shop"))return {type:"pharmacy"};
+  if(aiHas(q,"surgical shop","सर्जिकल शॉप","surgical supplies","medical supplies"))return {type:"surgical_shop"};
+  if(aiHas(q,"patient registration","registration","पंजीकरण","रजिस्ट्रेशन","मरीज पंजीकरण"))return {type:"registration"};
+
+  if(aiHas(q,"घुटना","घुटने","ghutna","ghutne","ghutno","जोड़","जोड़ों","jod","jodon","हड्डी","haddi","fracture","फ्रैक्चर","knee","joint","bone","orthopedic","orthopaedic","ऑर्थोपेडिक","plaster","प्लास्टर"))return {type:"orthopaedic"};
+  if(aiHas(q,"महिला डॉक्टर","महिला विशेषज्ञ","lady doctor","female doctor","women doctor","pregnancy","गर्भावस्था","प्रेग्नेंसी","स्त्री रोग","gynaecology","gynecology"))return {type:"gynaecology"};
+  if(aiHas(q,"surgery","सर्जरी","operation","ऑपरेशन","laparoscopy","laparoscopic","लेप्रोस्कोपिक","laser surgery","लेजर सर्जरी","सर्जन"))return {type:"surgery"};
+  if(aiHas(q,"address","location","पता","कहाँ","कहां","लोकेशन","saharsa","सहरसा","map","directions"))return {type:"address"};
+  if(aiHas(q,"hospital open","open today","hospital timing","अस्पताल खुला","आज अस्पताल","अस्पताल कब खुला"))return {type:"hospital_timing"};
+  if(aiHas(q,"पहली बार","first visit","new patient","नया मरीज"))return {type:"first_visit"};
+  if(aiHas(q,"report","reports","रिपोर्ट","test result","जांच रिपोर्ट","जाँच रिपोर्ट"))return {type:"report"};
+  if(doctor&&!today&&!tomorrow)return {type:"doctor_list"};
+  if(aiHas(q,"service","services","सेवा","सुविधा","facility","इलाज"))return {type:"services"};
+  return {type:"unknown"};
+}
+
 async function smartHospitalAssistant(message){
-  const q=message.toLowerCase().trim();
-  const norm=q.replace(/[?？!！.,।]/g," ");
-  const has=(...words)=>words.some(w=>norm.includes(w));
-  const asksToday=/(^|\s)(आज|today)(\s|$)/i.test(norm) || norm.includes("आज कौन") || norm.includes("आज की");
-  const asksTomorrow=/(^|\s)(कल|tomorrow|tomorrow's)(\s|$)/i.test(norm) || norm.includes("कल कौन") || norm.includes("कल की");
-  const asksDoctors=has("doctor","doctors","डॉक्टर","डाक्टर","डॉ","डॉ.","चिकित्सक");
-  const asksOpd=has("opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
-  const asksAppointment=has("appointment","अपॉइंटमेंट","booking","बुक","बुकिंग","appointment कैसे","अपॉइंटमेंट कैसे");
-  const asksEmergency=has("emergency","इमरजेंसी","आपात","urgent","ambulance");
-  const indiaDateParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
-  const indiaNow={}; indiaDateParts.forEach(p=>indiaNow[p.type]=p.value);
-  const today=new Date(`${indiaNow.year}-${indiaNow.month}-${indiaNow.day}T00:00:00+05:30`);
-  const targetDate=new Date(today);
-  if(asksTomorrow)targetDate.setDate(targetDate.getDate()+1);
-  const targetDateStr=targetDate.toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"});
-  const dateLabel=asksTomorrow?"कल":"आज";
+  const i=aiIntent(message);
+  if(i.type==="emergency")return "🚑 Emergency के लिए तुरंत hospital से संपर्क करें:\n"+AI_CONFIG.emergencyPhone+"\n\nगंभीर स्थिति में local emergency services से भी संपर्क करें।";
+  if(i.type==="appointment")return "📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nअपना नाम, mobile number, preferred doctor/date/time और समस्या का संक्षिप्त विवरण भेजें। Final confirmation hospital team द्वारा दी जाएगी।";
+  if(i.type==="appointment_change")return "📅 Appointment cancel/reschedule या date/time change करने के लिए WhatsApp करें:\n+91 80512 46461\n\nPatient name, mobile number और requested change भेजें। Final confirmation hospital team द्वारा दी जाएगी।";
+  if(i.type==="availability")return await aiAvailability(message);
+  if(i.type==="doctor_opd")return await aiDoctorOpd(message,i.doctorKey);
+  if(i.type==="doctor_info")return await aiDoctorInfo(i.doctorKey);
+  if(i.type==="doctor_list"){const d=await aiDoctors();return d.length?"👨‍⚕️ Hospital में available doctors:\n\n"+d.map((x,n)=>(n+1)+". "+aiDoctorText(x)).join("\n\n"):"अभी published doctor information उपलब्ध नहीं है।";}
+  if(i.type==="diagnostic")return "🩻 Hospital में CT Scan और Digital X-Ray services listed हैं।\n\nAvailability, timing और preparation के लिए hospital से confirm करें। Report की interpretation doctor से कराएँ।";
+  if(i.type==="ultrasound")return "🔎 Hospital में Ultrasound (USG) diagnostic service listed है।\n\nAvailability, timing और preparation के लिए hospital से confirm करें।";
+  if(i.type==="pathology")return "🧪 Hospital में Pathology / in-house laboratory service listed है।\n\nTest availability, timing और sample preparation hospital से confirm करें।";
+  if(i.type==="bmd")return "🦴 Hospital में BMD Test (Bone Mineral Density assessment) listed है।\n\nAvailability और timing के लिए hospital से confirm करें।";
+  if(i.type==="icu")return "🫀 Hospital में ICU / Critical Care support listed है।\n\nICU bed availability और admission decision medical team से confirm करें।";
+  if(i.type==="nicu")return "👶 Hospital में NICU / newborn intensive care support listed है।\n\nNICU availability और admission requirements hospital team से तुरंत confirm करें।";
+  if(i.type==="admission")return "🏥 Hospital में IPD (inpatient admission and care) service listed है।\n\nAdmission eligibility, bed availability, documents और charges hospital team से confirm करें। Emergency में पहले emergency desk से संपर्क करें।";
+  if(i.type==="pharmacy")return "💊 Hospital में Pharmacy service listed है।\n\nMedicine availability और timing के लिए hospital pharmacy से confirm करें। यह assistant prescription या dose नहीं बताता।";
+  if(i.type==="surgical_shop")return "🛒 Hospital में Surgical Shop / surgical and medical supplies service listed है।\n\nItem availability hospital team से confirm करें।";
+  if(i.type==="registration")return "📝 Patient Registration website के Patient Registration section से किया जा सकता है।\n\nसमस्या हो तो +91 80512 46461 पर संपर्क करें।";
+  if(i.type==="orthopaedic"){const d=aiFindDoctor(await aiDoctors(),"abul");return "🦴 हड्डी/जोड़/Orthopaedic समस्या के लिए Orthopaedic Surgery और Plaster Services listed हैं।\n\n"+(d?aiDoctorText(d):"Doctor availability hospital से confirm करें।")+"\n\nयह assistant diagnosis या treatment prescribe नहीं करता।";}
+  if(i.type==="gynaecology"){const d=aiFindDoctor(await aiDoctors(),"hena");return "👩‍⚕️ महिला/Gynaecology consultation के लिए:\n"+(d?aiDoctorText(d):"Doctor information उपलब्ध नहीं है।")+"\n\nPregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है। आज की actual availability published OPD schedule से confirm करें।";}
+  if(i.type==="surgery"){const d=aiFindDoctor(await aiDoctors(),"tariq");return "🏥 Surgical consultation के लिए General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n"+(d?aiDoctorText(d):"")+"\n\nकिसी operation/procedure की suitability doctor की clinical examination के बाद तय की जाती है।";}
+  if(i.type==="address")return "📍 Amna Memorial Hospital:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए website का 📍 Directions button इस्तेमाल करें।";
+  if(i.type==="hospital_timing")return "🏥 Emergency & Casualty service 24×7 listed है।\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है।";
+  if(i.type==="first_visit")return "👤 पहली visit के लिए appointment/OPD availability पहले confirm करना उपयोगी है। पुराने reports/prescriptions हों तो साथ रखें।\n\nRegistration/appointment: +91 80512 46461";
+  if(i.type==="report")return "📄 Test reports की clinical interpretation doctor से कराएँ। Hospital में Pathology, CT Scan, Digital X-Ray, Ultrasound और BMD जैसी diagnostic services listed हैं।";
+  if(i.type==="services")return await aiServicesAnswer(message);
 
-  // Phase 2 fix: route explicit Hina Farooqui questions before generic doctor routing.\n  // Handles Hindi nukta/spelling variants such as फ़ारूक़ी / फारूकी.\n  const henaQuery = norm.replace(/[़ًٌٍَُِّْٰ]/g, "");\n  if(henaQuery.includes("हिना फारूकी") || norm.includes("hena farooqui")){\n    return "👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\\nObstetrician & Gynaecologist\\nMBBS, MS\\n\\n👩‍🍼 Pregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\\n🕐 सामान्य OPD: 2 PM–6 PM\\n\\nआज की actual availability published OPD schedule से confirm करें।";\n  }\n\n  if(asksEmergency){
-    return "🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
+  const r=await fetch("https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","apikey":"sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X"},
+    body:JSON.stringify({message:message})
+  });
+  let data={};try{data=await r.json();}catch{}
+  if(!r.ok)throw new Error(data?.error||"AI provider request failed");
+  return data?.answer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
+}
+
+function renderAiMessage(el,text){
+  if(!el)return;el.textContent="";
+  String(text).split("\n").forEach((line,n)=>{
+    el.appendChild(document.createTextNode(line));
+    if(n<String(text).split("\n").length-1)el.appendChild(document.createElement("br"));
+  });
+  const s=String(text),box=document.getElementById("aiMessages");
+  if(/Appointment के लिए WhatsApp/i.test(s)){
+    const a=document.createElement("a");a.href="https://wa.me/"+AI_CONFIG.appointmentWhatsApp+"?text="+encodeURIComponent("Namaste Amna Memorial Hospital, mujhe appointment lena hai.");a.target="_blank";a.rel="noopener";a.textContent="📲 WhatsApp Appointment";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
   }
-
-  // Extended patient-intent routing: appointment changes, registration, diagnostics,
-  // admission, surgery preparation, pharmacy and facility guidance.
-  // Informational only; do not diagnose or prescribe treatment.
-  if(has("appointment cancel","cancel appointment","अपॉइंटमेंट कैंसल","अपॉइंटमेंट रद्द","बुकिंग रद्द","appointment reschedule","reschedule appointment","appointment change","तारीख बदल","समय बदल","अपॉइंटमेंट बदल")){
-    return "📅 Appointment को cancel/reschedule या date/time change करने के लिए hospital appointment team से WhatsApp पर संपर्क करें:\n+91 80512 46461\n\nकृपया patient name, mobile number और requested change भेजें। Final confirmation hospital team द्वारा दी जाएगी।";
-  }
-
-  if(asksAppointment){
-    // Appointment contact is public hospital information; keep this quick action
-    // independent of database/RLS so it works reliably on both mobile and PC.
-    const number="918051246461";
-    return "📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
-  }
-
-  // Appointment preparation / patient registration
-  if(has("appointment में क्या चाहिए","appointment ke liye kya chahiye","appointment details","बुकिंग के लिए क्या चाहिए","अपॉइंटमेंट के लिए क्या चाहिए")){
-    return "📋 Appointment request के लिए patient का नाम, mobile number, preferred doctor/date/time और समस्या का brief description देना उपयोगी है।\n\nFinal requirements/confirmation hospital team से verify करें।";
-  }
-
-  if(has("patient registration","registration","पंजीकरण","रजिस्ट्रेशन","मरीज पंजीकरण","patient register")){
-    return "📝 Patient Registration website के Patient Registration section से किया जा सकता है।\n\nअगर registration में कोई समस्या हो तो hospital team से +91 80512 46461 पर संपर्क करें।";
-  }
-
-  // Diagnostics: route to the relevant listed service without interpreting results.
-  if(has("ct scan","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे")){
-    return "🩻 Diagnostic service: hospital में CT Scan और Digital X-Ray services listed हैं।\n\nTest की availability, timing और preparation के लिए hospital से confirm करें। Report की medical interpretation doctor से कराएँ।";
-  }
-
-  if(has("ultrasound","usg","अल्ट्रासाउंड","यूएसजी","sonography","सोनोग्राफी")){
-    return "🔎 Hospital में Ultrasound (USG) diagnostic service listed है।\n\nAvailability, timing और किसी preparation की आवश्यकता के लिए hospital से confirm करें।";
-  }
-
-  if(has("pathology","lab test","laboratory","blood test","blood test","पैथोलॉजी","लैब","ब्लड टेस्ट","जांच","जाँच")){
-    return "🧪 Hospital में Pathology / in-house laboratory service listed है।\n\nकौन-सा test उपलब्ध है, timing और sample preparation के लिए hospital से confirm करें।";
-  }
-
-  if(has("bmd","bone mineral density","बीएमडी","हड्डी की जांच","bone density")){
-    return "🦴 Hospital में BMD Test (Bone Mineral Density assessment) listed है।\n\nTest availability और timing के लिए hospital से confirm करें।";
-  }
-
-  // Admission / inpatient care
-  if(has("admission","admit","admitted","ipd","आईपीडी","भर्ती","दाखिला","hospital admission")){
-    return "🏥 Hospital में IPD (inpatient admission and care) service listed है।\n\nAdmission की eligibility, bed availability, documents और charges hospital team से confirm करें। Emergency में पहले emergency desk से संपर्क करें।";
-  }
-
-  if(has("icu","आईसीयू","critical care","क्रिटिकल केयर") && !has("nicu","एनआईसीयू","newborn","नवजात")){
-    return "🫀 Hospital में ICU / Critical Care support listed है।\n\nICU bed availability और admission decision hospital medical team से confirm करें। गंभीर स्थिति में तुरंत emergency care लें।";
-  }
-
-  if(has("nicu","एनआईसीयू","newborn","नवजात","new born")){
-    return "👶 Hospital में NICU / newborn intensive care support listed है।\n\nNICU availability और admission requirements hospital team से तुरंत confirm करें।";
-  }
-
-  // Surgery information and preparation
-  if(has("surgery process","operation process","सर्जरी प्रक्रिया","ऑपरेशन प्रक्रिया","operation की तैयारी","operation ke liye","surgery preparation","सर्जरी की तैयारी")){
-    return "🏥 Hospital में General Surgery, Laparoscopic Surgery, Laser Surgery, Major Surgery और Minor Surgery services listed हैं।\n\nकिसी operation की आवश्यकता, suitability और preparation doctor examination के बाद तय करते हैं। Pre-operative instructions hospital/doctor से confirm करें।";
-  }
-
-  if(has("laparoscopy","laparoscopic","लेप्रोस्कोपी","लैप्रोस्कोपिक","laser surgery","लेजर सर्जरी")){
-    return "🔬 Hospital में Laparoscopic Surgery और Laser Surgery services listed हैं।\n\nकौन-सी procedure उपयुक्त है, यह doctor examination के बाद तय होता है। Consultation के लिए appointment ले सकते हैं।";
-  }
-
-  if(has("pre operative","preoperative","pre op","प्री ऑपरेटिव","post operative","postoperative","पोस्ट ऑपरेटिव","ऑपरेशन के बाद")){
-    return "🩺 Hospital में Pre & Post-Operative Care service listed है।\n\nआपके specific operation के लिए preparation और recovery instructions treating doctor/hospital team से लें।";
-  }
-
-  // Trauma, wound and orthopaedic support
-  if(has("trauma","ट्रॉमा","injury","चोट","wound","घाव","wound care","वाउंड केयर")){
-    return "🚑 Hospital में Trauma Care और Wound Care services listed हैं।\n\nगंभीर चोट, भारी bleeding, बेहोशी या अन्य emergency signs में तुरंत emergency care लें।";
-  }
-
-  if(has("plaster","प्लास्टर","cast","फ्रैक्चर का प्लास्टर","fracture plaster")){
-    return "🦴 Hospital में Plaster Services और Orthopaedic Surgery services listed हैं।\n\nFracture/injury का assessment doctor द्वारा कराया जाना चाहिए; plaster की आवश्यकता और type doctor तय करते हैं।";
-  }
-
-  // Pharmacy / medical supplies
-  if(has("pharmacy","medical shop","दवा की दुकान","फार्मेसी","मेडिसिन","medicine","दवा")){
-    return "💊 Hospital में Pharmacy service listed है।\n\nदवा की availability और timing के लिए hospital pharmacy से confirm करें। यह assistant prescription या medicine dose नहीं बताता।";
-  }
-
-  if(has("surgical shop","सर्जिकल शॉप","surgical supplies","medical supplies","सर्जिकल सामान")){
-    return "🛒 Hospital में Surgical Shop / surgical and medical supplies service listed है।\n\nकिस item की availability है, यह hospital team से confirm करें।";
-  }
-
-  // General patient guidance / first visit
-  if(has("first visit","पहली बार","पहली विजिट","new patient","नया मरीज","पहली बार अस्पताल")){
-    return "👤 पहली visit के लिए appointment/OPD availability पहले confirm करना उपयोगी है। अगर पुराने reports, prescriptions या test reports हैं तो उन्हें साथ रखें।\n\nRegistration/appointment के लिए website या +91 80512 46461 पर संपर्क करें।";
-  }
-
-  if(has("report","reports","रिपोर्ट","test result","जांच रिपोर्ट","जाँच रिपोर्ट")){
-    return "📄 Test reports की clinical interpretation doctor से कराएँ। Hospital में Pathology, CT Scan, Digital X-Ray, Ultrasound और BMD जैसी diagnostic services listed हैं।\n\nकिस report/service की जानकारी चाहिए, उसका नाम बताइए।";
-  }
-
-  // Specific doctor + date takes priority over the generic doctor-availability response.
-  const requestedDoctorEarly =
-    norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
-    norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
-    norm.includes("हिना फारूक") || norm.includes("हिना फ़ारूक") || norm.includes("hena farooqui") ? "hena" : null;
-
-  if((asksToday||asksTomorrow) && asksOpd && requestedDoctorEarly){
-    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(docError)throw docError;
-    const doctor=docs?.find(d=>{
-      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
-      return (requestedDoctorEarly==="abul" && names.includes("अबुल कलाम")) ||
-             (requestedDoctorEarly==="tariq" && names.includes("तारिक")) ||
-             (requestedDoctorEarly==="hena" && names.includes("हिना"));
-    });
-    if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
-      if(error)throw error;
-      const row=(data||[])[0];
-      if(row)return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
-      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
-    }
-  }
-
-  if((asksToday||asksTomorrow) && (asksDoctors||asksOpd)){
-    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
-    if(error)throw error;
-    const rows=data||[];
-    if(!rows.length)return dateLabel+" ("+targetDateStr+") के लिए कोई published OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
-    const ids=[...new Set(rows.map(x=>x.doctor_id).filter(Boolean))];
-    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
-    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
-    const available=rows.filter(r=>String(r.status||"").toLowerCase()==="available");
-    if(!available.length)return dateLabel+" के लिए schedule उपलब्ध है, लेकिन किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
-    return "📅 "+dateLabel+" उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{
-      const d=map.get(String(r.doctor_id));
-      return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?"\nOPD: "+d.opd_time:"")+(r.note?"\n"+r.note:"");
-    }).join("\n\n");
-  }
-
-  // Natural-language care/service routing. This provides informational guidance only;
-  // it does not diagnose conditions or prescribe treatment.
-  if(has("महिला डॉक्टर","महिला विशेषज्ञ","lady doctor","female doctor","women doctor","women specialist","pregnancy","गर्भावस्था","प्रेग्नेंसी","स्त्री रोग","gynaecology","gynecology")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("हिना") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("gynaecology"));
-    if(d)return "👩‍⚕️ महिला/गायनेकोलॉजी consultation के लिए:\n"+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"")+"\n\nOPD availability date-wise बदल सकती है। आज की availability पूछें तो मैं published schedule check कर सकता हूँ।"+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
-  }
-
-  if(has("घुटना","घुटने","ghutna","ghutne","ghutno","जोड़","जोड़ों","jod","jodon","हड्डी","haddi","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","plaster","orthopedic","orthopaedic","ऑर्थोपेडिक")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("अबुल") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("orthop"));
-    return "🦴 हड्डी/जोड़/ऑर्थोपेडिक समस्या के लिए hospital में Orthopaedic Surgery और Plaster Services उपलब्ध हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"Doctor availability के लिए hospital से confirm करें।")+"\n\nयह assistant diagnosis या treatment prescribe नहीं करता। चोट/गंभीर स्थिति में medical evaluation कराएँ।";
-  }
-
-  if(has("ऑपरेशन","सर्जरी","surgery","operation","laparoscopy","laparoscopic","लेप्रोस्कोपिक","लेज़र","laser surgery","सर्जन")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("तारिक") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("laparoscopic"));
-    return "🏥 Surgical consultation के लिए hospital में General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n"+(d?"👨‍⚕️ "+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:""):"")+"\n\nकिसी operation की suitability doctor examination के बाद तय करते हैं।";
-  }
-
-  if(has("अस्पताल खुला","hospital open","open today","आज अस्पताल","hospital timing","अस्पताल कब खुला")){
-    return "🏥 Hospital की Emergency & Casualty service 24×7 listed है।\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है। आप पूछ सकते हैं: “आज कौन डॉक्टर उपलब्ध है?”";
-  }
-
-
-  if(asksDoctors && has("available","availability","उपलब्ध","बैठ","बैठते","बैठ रहे")){
-    const {data:rows,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
-    if(error)throw error;
-    const ids=[...new Set((rows||[]).map(r=>r.doctor_id).filter(Boolean))];
-    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
-    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
-    const available=(rows||[]).filter(r=>String(r.status||"").toLowerCase()==="available");
-    if(!available.length)return "📅 आज के published schedule के अनुसार किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
-    return "👨‍⚕️ आज उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{const d=map.get(String(r.doctor_id));return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?" — OPD "+d.opd_time:"")+(r.note?"\n"+r.note:"");}).join("\n\n");
-  }
-
-  if(asksDoctors && !asksToday && !asksTomorrow){
-    const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    if(!data?.length)return "अभी डॉक्टर की जानकारी उपलब्ध नहीं है। कृपया अस्पताल से संपर्क करें।";
-
-    const doctorMatch=data.find(d=>{
-      const name=(d.name_hi+" "+(d.name_en||"")).toLowerCase();
-      const tokens=name.split(/\s+/).filter(x=>x.length>2);
-      return tokens.some(t=>norm.includes(t)) || (has("अबुल","abul","kalam","कलाम") && name.includes("अबुल")) || (has("तारिक","tarique","tariq") && name.includes("तारिक")) || (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && name.includes("हिना"));
-    });
-
-    if(doctorMatch){
-      return "👨‍⚕️ "+(doctorMatch.name_hi||doctorMatch.name_en||"Doctor")+"\n"+(doctorMatch.specialty_hi||doctorMatch.specialty_en||"")+"\n"+(doctorMatch.qualification||"")+(doctorMatch.opd_time?"\n🕐 OPD: "+doctorMatch.opd_time:"")+(doctorMatch.profile_slug?"\n\nDoctor profile: "+doctorMatch.profile_slug+".html":"");
-    }
-
-    return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
-  }
-
-  if(asksOpd && asksDoctors){
-    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(docError)throw docError;
-    const doctor=docs?.find(d=>{
-      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
-      return (has("अबुल","abul","kalam","कलाम") && names.includes("अबुल")) ||
-             (has("तारिक","tarique","tariq","मो","तारिक") && names.includes("तारिक")) ||
-             (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && names.includes("हिना"));
-    });
-    if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
-      if(error)throw error;
-      const rows=data||[];
-      if(!rows.length)return (doctor.name_hi||doctor.name_en)+" की कोई published OPD schedule entry उपलब्ध नहीं है।";
-      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की OPD जानकारी:\n\n"+rows.map(r=>"• "+r.schedule_date+" — "+(r.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(r.note?"\n  "+r.note:"")).join("\n");
-    }
-  }
-
-
-
-
-  // Phase 2: expanded patient Q&A intents (informational only; no diagnosis/prescription).
-  if(has("appointment लेने के लिए","appointment ke liye","appointment कैसे लें","appointment kaise le","appointment lena hai","अपॉइंटमेंट कैसे","बुकिंग कैसे","booking kaise")){
-    return "📲 Appointment लेने के लिए:\n\nWhatsApp: +91 80512 46461\n\nकृपया अपना नाम, मोबाइल नंबर, जिस doctor से मिलना है, पसंदीदा तारीख/समय और समस्या का संक्षिप्त विवरण भेजें। Final appointment confirmation hospital team द्वारा दी जाएगी।";
-  }
-  if(has("अबुल कलाम से appointment","abul kalam se appointment","अबुल कलाम का appointment","abul kalam appointment")){
-    return "👨‍⚕️ डॉ. अबुल कलाम (Orthopaedic Surgeon) से appointment के लिए WhatsApp करें:\n+91 80512 46461\n\nअपना नाम, मोबाइल नंबर, पसंदीदा तारीख/समय और समस्या का संक्षिप्त विवरण भेजें। Doctor availability date-wise confirm होगी।";
-  }
-  if(has("हिना फारूकी","हिना फ़ारूक़ी","हिना फ़ारूक़ी","hena farooqui","महिला डॉक्टर","women doctor","pregnancy doctor","pregnancy के लिए")){
-    return "👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी Obstetrician & Gynaecologist हैं। Pregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है।\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
-  }
-  if(has("तारिक कौन-कौन","तारिक कौन कौन","tarique kya surgery","tariq kya surgery","तारिक कौन सी surgery","कौन-कौन सी surgery करते")){
-    return "👨‍⚕️ डॉ. प्रो0 मो0 तारिक General / Laparoscopic / Laser Surgeon हैं। Hospital में General Surgery, Laparoscopic Surgery और Laser Surgery services listed हैं।\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nकिसी particular operation की suitability doctor examination के बाद तय करते हैं।";
-  }
-  if(has("कौन-कौन से test","कौन कौन से test","kaun kaun se test","tests available","कौन से जांच","कौन-कौन सी जांच")){
-    return "🩻 Hospital में listed diagnostic services:\n\n• CT Scan\n• Digital X-Ray\n• Ultrasound / USG\n• Pathology / Blood Tests\n• BMD Test\n\nAvailability, timing और preparation के लिए hospital से confirm करें।";
-  }
-  if(has("पहली बार","पहली बार अस्पताल","first time","first visit","पहली बार hospital")){
-    return "🏥 पहली बार अस्पताल आने पर:\n\n1. Patient Registration कराएँ।\n2. अपनी समस्या और पुराने medical reports साथ रखें।\n3. संबंधित doctor/OPD की availability confirm करें।\n4. Consultation के बाद doctor आगे की जांच या treatment की सलाह देंगे।\n\nEmergency में सीधे Emergency & Casualty से संपर्क करें।";
-  }
-  if(has("emergency admission","emergency में admission","इमरजेंसी में admission","emergency me admission")){
-    return "🚑 Emergency में पहले Emergency & Casualty desk से संपर्क करें। Medical team patient की स्थिति का assessment करेगी और जरूरत के अनुसार admission/IPD का निर्णय लिया जाएगा।\n\nगंभीर स्थिति में तुरंत emergency care लें।";
-  }
-  if(has("operation से पहले","operation se pehle","surgery se pehle","सर्जरी से पहले","pre operative","pre-op")){
-    return "🏥 Operation से पहले doctor की pre-operative evaluation और आवश्यक tests/assessment किए जा सकते हैं। Fasting, medicines और अन्य preparation के निर्देश treating doctor/medical team से लें।\n\nकिसी specific operation के लिए doctor की instructions follow करें।";
-  }
-  if(has("operation के बाद","operation ke baad","surgery ke baad","सर्जरी के बाद","post operative","post-op")){
-    return "🏥 Operation के बाद hospital की Pre & Post-Operative Care service के अनुसार follow-up और recovery instructions दिए जाते हैं। Dressing, medicines, diet, activity और follow-up की specific instructions treating doctor से लें।";
-  }
-  if(has("कौन-कौन सी surgery","कौन कौन सी surgery","kaun kaun si surgery","hospital me kaun si surgery","अस्पताल में कौन-कौन सी surgery")){
-    return "🏥 Hospital में listed surgical services:\n\n• General Surgery\n• Laparoscopic Surgery\n• Laser Surgery\n• Major Surgery\n• Minor Surgery\n• Orthopaedic Surgery\n• Thermal Ablation\n• OT / surgical support\n\nकिसी procedure की suitability doctor की clinical evaluation के बाद तय होती है।";
-  }
-
-  const requestedDoctor =
-    norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
-    norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
-    norm.includes("हिना फारूक") || norm.includes("हिना फ़ारूक") || norm.includes("hena farooqui") ? "hena" : null;
-
-  if(asksOpd && requestedDoctor){
-    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(docError)throw docError;
-    const doctor=docs?.find(d=>{
-      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
-      return (requestedDoctor==="abul" && names.includes("अबुल कलाम")) ||
-             (requestedDoctor==="tariq" && names.includes("तारिक")) ||
-             (requestedDoctor==="hena" && names.includes("हिना"));
-    });
-    if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
-      if(error)throw error;
-      const row=(data||[])[0];
-      if(row){
-        return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
-      }
-      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
-    }
-  }
-
-
-  if(asksOpd){
-    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(docError)throw docError;
-    if(!docs?.length)return "अभी डॉक्टर/OPD की जानकारी उपलब्ध नहीं है।";
-    const {data:rows,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
-    if(error)throw error;
-    const map=new Map((rows||[]).map(r=>[String(r.doctor_id),r]));
-    return "📅 "+dateLabel+" की OPD जानकारी:\n\n"+docs.map((d,i)=>{
-      const r=map.get(String(d.id));
-      return (i+1)+". "+(d.name_hi||d.name_en||"Doctor")+" — "+(r?(r.status||"Status"):"No published entry")+(d.opd_time?" — सामान्य OPD "+d.opd_time:"")+(r?.note?"\n  "+r.note:"");
-    }).join("\n\n");
-  }
-
-  if(has("service","services","सेवा","इलाज","facility","सुविधा")){
-    const {data,error}=await sb.from("services").select("title_hi,title_en,short_description,page_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    if(!data?.length)return "अभी services की जानकारी उपलब्ध नहीं है।";
-    const match=data.find(s=>has((s.title_hi||"").toLowerCase(),(s.title_en||"").toLowerCase()));
-    if(match)return "🏥 "+(match.title_hi||match.title_en)+"\n"+(match.short_description||"")+(match.page_slug?"\n\nसेवा विवरण: "+match.page_slug+".html":"");
-    return "अस्पताल की उपलब्ध सेवाएँ:\n\n"+data.map((s,i)=>(i+1)+". "+(s.title_hi||s.title_en||"Service")+(s.short_description?" — "+s.short_description:"")).join("\n");
-  }
-
-  if(has("address","location","पता","कहाँ","कहां","लोकेशन","सहरसा","saharsa","map")){
-    return "📍 Amna Memorial Hospital का पता:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए website पर 📍 Directions बटन इस्तेमाल करें।";
-  }
-
-  if(has("update","notice","सूचना","अपडेट","strike","हड़ताल")){
-    const {data,error}=await sb.from("hospital_updates").select("title_hi,title_en,body_hi,body_en,publish_date").eq("is_published",true).order("publish_date",{ascending:false}).limit(3);
-    if(error)throw error;
-    if(!data?.length)return "अभी कोई नई published hospital update उपलब्ध नहीं है।";
-    return "📢 हाल की hospital updates:\n\n"+data.map(x=>"• "+(x.title_hi||x.title_en||"Update")+(x.body_hi?"\n"+x.body_hi:"")).join("\n\n");
-  }
-
-  return "मैं Amna Memorial Hospital का Smart Patient Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• किसी doctor की OPD कब है?\n• मेरी समस्या के लिए कौन-सा department/doctor relevant है?\n• Appointment कैसे लें या reschedule करें?\n• Patient registration कैसे करें?\n• CT Scan / X-Ray / Ultrasound / Pathology / BMD की जानकारी\n• Admission / IPD / ICU / NICU की जानकारी\n• Surgery / Laparoscopy / Laser Surgery की जानकारी\n• Pharmacy / Surgical Shop की जानकारी\n• अस्पताल का पता, Directions या Emergency number\n\nमैं diagnosis या prescription नहीं देता; medical decision doctor की consultation के बाद लें।";
+  if(/Emergency के लिए/i.test(s)){const a=document.createElement("a");a.href="tel:"+AI_CONFIG.emergencyPhone;a.textContent="📞 Emergency Call";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);}
+  if(box)box.scrollTop=box.scrollHeight;
 }
 
 window.smartHospitalAssistant=smartHospitalAssistant;
-window.sendAiNow=async function(){
-  const input=document.getElementById("aiInput"), messages=document.getElementById("aiMessages");
-  if(!input||!messages)return false;
-  const message=input.value.trim();
-  if(!message)return false;
-  const user=document.createElement("div"); user.className="ai-msg user"; user.textContent=message; messages.appendChild(user);
-  input.value=""; input.disabled=true;
-  const pending=document.createElement("div"); pending.className="ai-msg bot"; pending.textContent="जानकारी देखी जा रही है…"; messages.appendChild(pending);
-  messages.scrollTop=messages.scrollHeight;
-  try{
-    const answer=await window.smartHospitalAssistant(message);
-    renderAiMessage(pending,answer);
-  }catch(err){
-    pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया दोबारा प्रयास करें।";
-  }finally{
-    input.disabled=false; input.focus(); messages.scrollTop=messages.scrollHeight;
-  }
+window.handleAiSubmit=async function(event){
+  if(event?.preventDefault)event.preventDefault();
+  const input=document.getElementById("aiInput"),box=document.getElementById("aiMessages");
+  if(!input||!box)return false;
+  const message=input.value.trim();if(!message)return false;
+  const user=document.createElement("div");user.className="ai-msg user";user.textContent=message;box.appendChild(user);
+  input.value="";input.disabled=true;
+  const pending=document.createElement("div");pending.className="ai-msg bot";pending.textContent="जानकारी देखी जा रही है…";box.appendChild(pending);box.scrollTop=box.scrollHeight;
+  try{renderAiMessage(pending,await smartHospitalAssistant(message));}
+  catch(error){console.error("Hospital AI error:",error);pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया थोड़ी देर बाद दोबारा प्रयास करें या hospital से संपर्क करें。";}
+  finally{input.disabled=false;input.focus();box.scrollTop=box.scrollHeight;}
   return false;
 };
 
-const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput"),aiChatLauncher=document.getElementById("aiChatLauncher");
-// Robust mobile initialization: ensure the launcher works even if another script fails earlier.
-if(aiChat && aiChatLauncher){
-  const openAiChat=()=>{aiChat.classList.add("open"); if(aiInput) setTimeout(()=>aiInput.focus(),50);};
-  aiChatLauncher.addEventListener("click",openAiChat);
-  aiChatLauncher.addEventListener("touchend",e=>{e.preventDefault();openAiChat();},{passive:false});
-  aiChatLauncher.onclick=openAiChat;
-}
-document.getElementById("aiClose").addEventListener("click",()=>aiChat.classList.remove("open"));
-document.querySelectorAll("[data-ai-q]").forEach(btn=>btn.addEventListener("click",()=>{aiInput.value=btn.getAttribute("data-ai-q");document.getElementById("aiForm").requestSubmit();}));
-function renderAiMessage(el,text){
-  el.textContent="";
-  const lines=String(text).split("\n");
-  lines.forEach((line,idx)=>{
-    el.appendChild(document.createTextNode(line));
-    if(idx<lines.length-1)el.appendChild(document.createElement("br"));
-  });
-  const s=String(text);
-  if(/Appointment के लिए WhatsApp/i.test(s)){
-    const n=(s.match(/\+?91\s*([0-9\s-]{10,})/)||[])[1];
-    const digits=(n||"8051246461").replace(/\D/g,"");
-    const a=document.createElement("a");a.href="https://wa.me/91"+digits+"?text="+encodeURIComponent("Namaste Amna Memorial Hospital, mujhe appointment lena hai. Kripya available doctor aur timing bataye.");a.target="_blank";a.rel="noopener";a.textContent="📲 WhatsApp Appointment";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
+(function initAiUi(){
+  const chat=document.getElementById("aiChat"),launcher=document.getElementById("aiChatLauncher"),close=document.getElementById("aiClose"),input=document.getElementById("aiInput"),form=document.getElementById("aiForm");
+  if(launcher){
+    const open=()=>{if(chat){chat.classList.add("open");chat.style.display="flex";}if(input)setTimeout(()=>input.focus(),50);};
+    launcher.addEventListener("click",open);launcher.addEventListener("touchend",e=>{e.preventDefault();open();},{passive:false});
   }
-  if(/Emergency के लिए/i.test(s)){
-    const a=document.createElement("a");a.href="tel:+918294905389";a.textContent="📞 Emergency Call";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
-  }
-  if(/Directions के लिए/i.test(s)){
-    const a=document.createElement("a");a.href="https://www.google.com/maps/search/?api=1&query=Amna+Memorial+Hospital+Saharsa+Bihar";a.target="_blank";a.rel="noopener";a.textContent="📍 Directions खोलें";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
-  }
-  const profileLine=s.match(/Doctor profile:\s*([^\s]+)/i);
-  if(profileLine){
-    const a=document.createElement("a");a.href=profileLine[1];a.target="_blank";a.rel="noopener";a.textContent="👨‍⚕️ Doctor Profile खोलें";a.className="ai-action";el.appendChild(document.createElement("br"));el.appendChild(a);
-  }
-  aiMessages.scrollTop=aiMessages.scrollHeight;
-}
-function addAiMessage(text,type){
-  const el=document.createElement("div");el.className="ai-msg "+type;
-  if(type==="bot") renderAiMessage(el,text); else el.textContent=text;
-  aiMessages.appendChild(el);aiMessages.scrollTop=aiMessages.scrollHeight;
-}
-window.handleAiSubmit=async function(e){
-  e.preventDefault();
-  const message=aiInput.value.trim();if(!message)return;
-  addAiMessage(message,"user");aiInput.value="";aiInput.disabled=true;
-  addAiMessage("जानकारी देखी जा रही है…","bot");
-  const pending=aiMessages.lastElementChild;
-  try{renderAiMessage(pending,await smartHospitalAssistant(message));}
-  catch(err){
-    // Public quick actions must still work even if a Supabase data query fails.
-    const q=message.toLowerCase();
-    if(/appointment|अपॉइंटमेंट|बुकिंग|बुक/.test(q)){
-      renderAiMessage(pending,"📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।");
-    }else if(/emergency|इमरजेंसी|आपात/.test(q)){
-      renderAiMessage(pending,"🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।");
-    }else{
-      pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया hospital से संपर्क करें।";
-    }
-  }
-  finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}};
-document.getElementById("aiForm").addEventListener("submit",window.handleAiSubmit);;
-
+  if(close)close.addEventListener("click",()=>{if(chat){chat.classList.remove("open");chat.style.display="none";}});
+  document.querySelectorAll("[data-ai-q]").forEach(b=>b.addEventListener("click",()=>{if(input){input.value=b.getAttribute("data-ai-q")||"";if(form)form.requestSubmit();}}));
+})();
 </script>
 </body>
 </html>
