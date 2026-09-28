@@ -561,9 +561,12 @@ function renderDoctors(doctors,opd){
  const select=document.getElementById("doctor"); if(select)select.innerHTML='<option value="">Select Doctor / डॉक्टर चुनें</option>'+doctors.map(d=>'<option value="'+escHospital(d.name_hi)+'">'+escHospital(d.name_hi)+'</option>').join("")+'<option value="Any Available Doctor">Any Available Doctor</option>';
 }
 function renderServices(services){const grid=document.getElementById("serviceCards");if(!grid)return;grid.innerHTML=services.map(s=>{const link=s.page_slug?escHospital(s.page_slug)+".html":"#services";return '<div class="card"><h3>🏥 <a href="'+link+'">'+escHospital(s.title_hi||s.title_en||"Service")+'</a></h3><div>'+escHospital(s.title_en||"")+'</div>'+(s.short_description?'<p>'+escHospital(s.short_description)+'</p>':"")+(s.page_slug?'<div><a href="'+link+'">सेवा विवरण →</a></div>':"")+'</div>';}).join("")||'<div class="card"><p>Service information is temporarily unavailable.</p></div>';}
-async function loadHospitalData(){const [dRes,sRes,oRes]=await Promise.all([sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("opd_schedule").select("*").eq("is_published",true).order("schedule_date",{ascending:false}).limit(100)]);if(!dRes.error)renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));if(!sRes.error)renderServices(sRes.data||[]);}
+async function loadHospitalData(){
+  const indiaTodayParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const indiaTodayObj={};indiaTodayParts.forEach(p=>indiaTodayObj[p.type]=p.value);
+  const indiaTodayStr=`${indiaTodayObj.year}-${indiaTodayObj.month}-${indiaTodayObj.day}`;const [dRes,sRes,oRes]=await Promise.all([sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("opd_schedule").select("*").eq("is_published",true).eq("schedule_date",indiaTodayStr).limit(100)]);if(!dRes.error)renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));if(!sRes.error)renderServices(sRes.data||[]);}
 function setQR(url){const src="https://api.qrserver.com/v1/create-qr-code/?size=700x700&margin=12&data="+encodeURIComponent(url);qrImage.src=src;qrDownload.href=src;} setQR(window.location.href);
-const now=new Date();dateInput.min=now.toISOString().slice(0,10);
+const nowParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const nowObj={};nowParts.forEach(p=>nowObj[p.type]=p.value);dateInput.min=`${nowObj.year}-${nowObj.month}-${nowObj.day}`;
 document.getElementById("appointmentForm").addEventListener("submit",function(e){e.preventDefault();const name=document.getElementById("name").value.trim(),mobile=document.getElementById("mobile").value.trim(),age=document.getElementById("age").value.trim(),gender=document.getElementById("gender").value,patientType=document.getElementById("patientType").value,doctor=document.getElementById("doctor").value,date=document.getElementById("date").value,time=document.getElementById("time").value,problem=document.getElementById("problem").value.trim();if(!name){alert("Please enter the patient's name.");return}if(!/^[0-9]{10}$/.test(mobile)){alert("Please enter a valid 10-digit mobile number.");return}if(!date){alert("Please select a preferred date.");return}const message=`*New Appointment Request*
 
 *Amna Memorial Hospital*
@@ -708,7 +711,7 @@ async function smartHospitalAssistant(message){
              (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && names.includes("हिना"));
     });
     if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).order("schedule_date",{ascending:false}).limit(10);
+      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
       if(error)throw error;
       const rows=data||[];
       if(!rows.length)return (doctor.name_hi||doctor.name_en)+" की कोई published OPD schedule entry उपलब्ध नहीं है।";
