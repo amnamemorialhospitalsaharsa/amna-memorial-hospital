@@ -1179,9 +1179,27 @@ async function smartHospitalAssistant(message) {
 
   if (intent.type === "gynaecology") {
     const doctor = aiDoctorByKey(await aiDoctors(), "hena");
-    return "👩‍⚕️ महिला/Gynaecology consultation के लिए:\n\n" +
+    let answer = "👩‍⚕️ महिला/Gynaecology consultation के लिए:\n\n" +
       (doctor ? aiDoctorText(doctor) : "Doctor information उपलब्ध नहीं है।") +
-      "\n\nPregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है। आज की actual availability published OPD schedule से confirm करें।";
+      "\n\nPregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है।";
+
+    if (doctor && (today || tomorrow)) {
+      const di = aiDateInfo(message);
+      const rows = await aiSchedule(di.date, doctor.id);
+
+      if (!rows.length) {
+        answer += "\n\n📅 " + di.label + " (" + di.date + ") के लिए कोई published OPD entry उपलब्ध नहीं है।";
+      } else {
+        const row = rows[0];
+        answer += "\n\n📅 " + di.label + " की availability: " +
+          (String(row.status || "").toLowerCase() === "available" ? "✅ Available" : "❌ Unavailable") +
+          (row.note ? "\n" + row.note : "");
+      }
+
+      answer += "\nActual availability hospital से confirm करें।";
+    }
+
+    return answer;
   }
 
   if (intent.type === "surgery") {
