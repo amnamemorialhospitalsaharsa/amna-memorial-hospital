@@ -658,32 +658,6 @@ async function smartHospitalAssistant(message){
     }).join("\n\n");
   }
 
-  const requestedDoctor =
-    norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
-    norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
-    norm.includes("हिना फारूक") || norm.includes("हिना फ़ारूक") || norm.includes("hena farooqui") ? "hena" : null;
-
-  if(asksOpd && requestedDoctor){
-    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(docError)throw docError;
-    const doctor=docs?.find(d=>{
-      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
-      return (requestedDoctor==="abul" && names.includes("अबुल कलाम")) ||
-             (requestedDoctor==="tariq" && names.includes("तारिक")) ||
-             (requestedDoctor==="hena" && names.includes("हिना"));
-    });
-    if(doctor){
-      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
-      if(error)throw error;
-      const row=(data||[])[0];
-      if(row){
-        return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
-      }
-      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
-    }
-  }
-
-
   // Natural-language care/service routing. This provides informational guidance only;
   // it does not diagnose conditions or prescribe treatment.
   if(has("महिला डॉक्टर","महिला विशेषज्ञ","lady doctor","female doctor","women doctor","women specialist","pregnancy","गर्भावस्था","प्रेग्नेंसी","स्त्री रोग","gynaecology","gynecology")){
@@ -693,7 +667,7 @@ async function smartHospitalAssistant(message){
     if(d)return "👩‍⚕️ महिला/गायनेकोलॉजी consultation के लिए:\n"+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"")+"\n\nOPD availability date-wise बदल सकती है। आज की availability पूछें तो मैं published schedule check कर सकता हूँ।"+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
   }
 
-  if(has("घुटना","जोड़","जोड़ों","हड्डी","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","orthopedic","orthopaedic","ऑर्थोपेडिक")){
+  if(has("घुटना","घुटने","जोड़","जोड़ों","हड्डी","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","orthopedic","orthopaedic","ऑर्थोपेडिक")){
     const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
     if(error)throw error;
     const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("अबुल") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("orthop"));
@@ -747,6 +721,34 @@ async function smartHospitalAssistant(message){
       return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की OPD जानकारी:\n\n"+rows.map(r=>"• "+r.schedule_date+" — "+(r.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(r.note?"\n  "+r.note:"")).join("\n");
     }
   }
+
+
+
+  const requestedDoctor =
+    norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
+    norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
+    norm.includes("हिना फारूक") || norm.includes("हिना फ़ारूक") || norm.includes("hena farooqui") ? "hena" : null;
+
+  if(asksOpd && requestedDoctor){
+    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(docError)throw docError;
+    const doctor=docs?.find(d=>{
+      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
+      return (requestedDoctor==="abul" && names.includes("अबुल कलाम")) ||
+             (requestedDoctor==="tariq" && names.includes("तारिक")) ||
+             (requestedDoctor==="hena" && names.includes("हिना"));
+    });
+    if(doctor){
+      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
+      if(error)throw error;
+      const row=(data||[])[0];
+      if(row){
+        return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
+      }
+      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
+    }
+  }
+
 
   if(asksOpd){
     const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
