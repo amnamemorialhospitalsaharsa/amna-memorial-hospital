@@ -556,6 +556,11 @@ window.sendAiDirect=async function(){
     const n=message.toLowerCase().replace(/[़ًٌٍَُِّْٰ]/g,"");
     if(n.includes("हिना फारूकी")||n.includes("hena farooqui")){
       pending.textContent="👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\nObstetrician & Gynaecologist\n\nPregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\n🕐 सामान्य OPD: 2 PM–6 PM\n\nआज की actual availability published OPD schedule से confirm करें।";
+    }else if(
+      (n.includes("तारिक") || n.includes("tarique") || n.includes("tariq")) &&
+      (n.includes("surgery") || n.includes("सर्जरी") || n.includes("operation") || n.includes("ऑपरेशन"))
+    ){
+      pending.textContent="👨‍⚕️ डॉ. प्रो0 मो0 तारिक\nGeneral / Laparoscopic / Laser Surgeon\n\n🏥 प्रमुख surgical services:\n• General Surgery\n• Laparoscopic Surgery\n• Laser Surgery\n\n🕐 सामान्य OPD: 2 PM–6 PM\n\nकिसी particular operation/procedure की suitability doctor की clinical examination के बाद तय की जाती है।";
     }else if(typeof window.smartHospitalAssistant==="function"){
       const localAnswer=await window.smartHospitalAssistant(message);
       pending.textContent=localAnswer||"अभी कोई जवाब प्राप्त नहीं हुआ।";
