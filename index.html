@@ -539,7 +539,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
   <form class="ai-form" id="aiForm" onsubmit="event.preventDefault(); window.handleAiSubmit(event); return false;">
     <input class="ai-input" id="aiInput" autocomplete="off" placeholder="अपना सवाल लिखें..." maxlength="1000" required>
-    <button class="ai-send" type="submit">Send</button>
+    <button class="ai-send" id="aiSend" type="button" onclick="if(window.handleAiSubmit){window.handleAiSubmit(event);}">Send</button>
   </form>
 </div>
 
