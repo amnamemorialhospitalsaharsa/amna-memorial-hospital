@@ -631,7 +631,7 @@ async function smartHospitalAssistant(message){
   const targetDateStr=targetDate.toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"});
   const dateLabel=asksTomorrow?"कल":"आज";
 
-  if(asksEmergency){
+  // Phase 2 fix: route explicit Hina Farooqui questions before generic doctor routing.\n  // Handles Hindi nukta/spelling variants such as फ़ारूक़ी / फारूकी.\n  const henaQuery = norm.replace(/[़ًٌٍَُِّْٰ]/g, "");\n  if(henaQuery.includes("हिना फारूकी") || norm.includes("hena farooqui")){\n    return "👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी\\nObstetrician & Gynaecologist\\nMBBS, MS\\n\\n👩‍🍼 Pregnancy, महिलाओं से संबंधित स्वास्थ्य समस्याओं और Gynaecology consultation के मरीजों को देखती हैं।\\n🕐 सामान्य OPD: 2 PM–6 PM\\n\\nआज की actual availability published OPD schedule से confirm करें।";\n  }\n\n  if(asksEmergency){
     return "🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
   }
 
