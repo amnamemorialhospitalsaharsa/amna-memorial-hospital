@@ -660,10 +660,13 @@ function aiHasAny(message, groups) {
 }
 
 function aiDateInfo(message) {
-  const normalized = aiNormalize(message);
-  const tomorrow =
-    /(^| )कल( |$)/.test(normalized) ||
-    /(^| )tomorrow( |$)/.test(normalized);
+  const normalized = aiNormalize(message)
+    .replace(/[\u200B-\u200D\uFEFF]/g, " ");
+
+  // Use exact normalized tokens so "कल" is never confused with words
+  // such as "कलाम". This also handles Hindi/English mixed questions.
+  const tokens = normalized.split(" ").filter(Boolean);
+  const tomorrow = tokens.includes("कल") || tokens.includes("tomorrow");
 
   const date = aiIndiaDate(tomorrow ? 1 : 0);
 
@@ -946,8 +949,9 @@ function aiIntent(message) {
   const doctorQuestion = aiIsDoctorQuestion(message);
   const availabilityQuestion = aiIsAvailabilityQuestion(message);
   const opdQuestion = aiIsOpdQuestion(message);
-  const today = aiHas(message, "आज", "today");
-  const tomorrow = aiHas(message, "कल", "tomorrow");
+  const dateInfo = aiDateInfo(message);
+  const today = dateInfo.label === "आज";
+  const tomorrow = dateInfo.label === "कल";
 
   // 1. Safety / urgent intent
   if (aiHas(q, "emergency", "इमरजेंसी", "आपात", "ambulance", "urgent")) {
@@ -969,7 +973,8 @@ function aiIntent(message) {
     return { type: "appointment", doctorKey };
   }
 
-  // 3. Live doctor availability MUST be checked before generic doctor listing
+  // 3. Live doctor availability MUST be checked before generic doctor listing.
+  // Date is resolved centrally by aiDateInfo(), so "कल" always queries tomorrow.
   if (availabilityQuestion && (doctorQuestion || today || tomorrow || aiHas(q, "कौन"))) {
     if (doctorKey && !aiHas(q, "कौन", "कौन-कौन", "कौन कौन")) {
       return { type: "doctor_availability", doctorKey };
