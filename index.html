@@ -659,7 +659,7 @@ async function smartHospitalAssistant(message){
   }
 
   // Diagnostics: route to the relevant listed service without interpreting results.
-  if(has("ct scan","ct","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे")){
+  if(has("ct scan","सीटी स्कैन","x ray","x-ray","एक्स रे","एक्स-रे","digital xray","डिजिटल एक्स-रे")){
     return "🩻 Diagnostic service: hospital में CT Scan और Digital X-Ray services listed हैं।\n\nTest की availability, timing और preparation के लिए hospital से confirm करें। Report की medical interpretation doctor से कराएँ।";
   }
 
@@ -680,7 +680,7 @@ async function smartHospitalAssistant(message){
     return "🏥 Hospital में IPD (inpatient admission and care) service listed है।\n\nAdmission की eligibility, bed availability, documents और charges hospital team से confirm करें। Emergency में पहले emergency desk से संपर्क करें।";
   }
 
-  if(has("icu","आईसीयू","critical care","क्रिटिकल केयर")){
+  if(has("icu","आईसीयू","critical care","क्रिटिकल केयर") && !has("nicu","एनआईसीयू","newborn","नवजात")){
     return "🫀 Hospital में ICU / Critical Care support listed है।\n\nICU bed availability और admission decision hospital medical team से confirm करें। गंभीर स्थिति में तुरंत emergency care लें।";
   }
 
@@ -728,6 +728,30 @@ async function smartHospitalAssistant(message){
     return "📄 Test reports की clinical interpretation doctor से कराएँ। Hospital में Pathology, CT Scan, Digital X-Ray, Ultrasound और BMD जैसी diagnostic services listed हैं।\n\nकिस report/service की जानकारी चाहिए, उसका नाम बताइए।";
   }
 
+  // Specific doctor + date takes priority over the generic doctor-availability response.
+  const requestedDoctorEarly =
+    norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
+    norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
+    norm.includes("हिना फारूक") || norm.includes("हिना फ़ारूक") || norm.includes("hena farooqui") ? "hena" : null;
+
+  if((asksToday||asksTomorrow) && asksOpd && requestedDoctorEarly){
+    const {data:docs,error:docError}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(docError)throw docError;
+    const doctor=docs?.find(d=>{
+      const names=((d.name_hi||"")+" "+(d.name_en||"")).toLowerCase();
+      return (requestedDoctorEarly==="abul" && names.includes("अबुल कलाम")) ||
+             (requestedDoctorEarly==="tariq" && names.includes("तारिक")) ||
+             (requestedDoctorEarly==="hena" && names.includes("हिना"));
+    });
+    if(doctor){
+      const {data,error}=await sb.from("opd_schedule").select("schedule_date,status,note").eq("is_published",true).eq("doctor_id",doctor.id).eq("schedule_date",targetDateStr).limit(1);
+      if(error)throw error;
+      const row=(data||[])[0];
+      if(row)return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+" की "+dateLabel+" की OPD:\n\n• "+row.schedule_date+" — "+(row.status||"Status")+(doctor.opd_time?" — "+doctor.opd_time:"")+(row.note?"\n  "+row.note:"");
+      return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
+    }
+  }
+
   if((asksToday||asksTomorrow) && (asksDoctors||asksOpd)){
     const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
     if(error)throw error;
@@ -771,6 +795,17 @@ async function smartHospitalAssistant(message){
     return "🏥 Hospital की Emergency & Casualty service 24×7 listed है।\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है। आप पूछ सकते हैं: “आज कौन डॉक्टर उपलब्ध है?”";
   }
 
+
+  if(asksDoctors && has("available","availability","उपलब्ध","बैठ","बैठते","बैठ रहे")){
+    const {data:rows,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
+    if(error)throw error;
+    const ids=[...new Set((rows||[]).map(r=>r.doctor_id).filter(Boolean))];
+    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
+    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
+    const available=(rows||[]).filter(r=>String(r.status||"").toLowerCase()==="available");
+    if(!available.length)return "📅 आज के published schedule के अनुसार किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
+    return "👨‍⚕️ आज उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{const d=map.get(String(r.doctor_id));return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?" — OPD "+d.opd_time:"")+(r.note?"\n"+r.note:"");}).join("\n\n");
+  }
 
   if(asksDoctors && !asksToday && !asksTomorrow){
     const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
