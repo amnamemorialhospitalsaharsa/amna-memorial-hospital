@@ -1183,8 +1183,8 @@ async function smartHospitalAssistant(message) {
       (doctor ? aiDoctorText(doctor) : "Doctor information उपलब्ध नहीं है।") +
       "\n\nPregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है।";
 
-    if (doctor && (today || tomorrow)) {
-      const di = aiDateInfo(message);
+    const di = aiDateInfo(message);
+    if (doctor && (di.label === "आज" || di.label === "कल")) {
       const rows = await aiSchedule(di.date, doctor.id);
 
       if (!rows.length) {
