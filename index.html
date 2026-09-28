@@ -818,11 +818,18 @@ async function aiDoctorAvailability(message, key) {
 
   const row = rows[0];
   const status = String(row.status || "").toLowerCase();
-  const isAvailable = status === "available";
+
+  let availabilityText;
+  if (status === "available") {
+    availabilityText = "✅ Available";
+  } else if (status === "unavailable") {
+    availabilityText = "❌ Unavailable";
+  } else {
+    availabilityText = "Status — " + (row.status || "Not specified");
+  }
 
   return aiDoctorText(doctor) +
-    "\n\n📅 " + di.label + " की availability: " +
-    (isAvailable ? "✅ Available" : "❌ Unavailable") +
+    "\n\n📅 " + di.label + " की availability: " + availabilityText +
     (row.note ? "\n" + row.note : "") +
     "\n\nActual availability hospital से confirm करें।";
 }
