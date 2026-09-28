@@ -1093,6 +1093,46 @@ function aiIntent(message) {
 }
 
 async function smartHospitalAssistant(message) {
+  const normalizedMessage = aiNormalize(message);
+
+  // Live availability questions must go to the Supabase backend first.
+  // This keeps doctor/date/OPD availability in one source of truth
+  // instead of duplicating date and doctor routing in the frontend.
+  const liveAvailabilityQuestion = aiHas(
+    normalizedMessage,
+    "available",
+    "availability",
+    "उपलब्ध",
+    "कौन डॉक्टर",
+    "कौन-कौन डॉक्टर",
+    "कौन कौन डॉक्टर",
+    "doctor available",
+    "doctor availability"
+  );
+
+  if (liveAvailabilityQuestion) {
+    try {
+      const liveResponse = await fetch(
+        "https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_PUBLISHABLE_KEY
+          },
+          body: JSON.stringify({ message })
+        }
+      );
+
+      let liveData = {};
+      try { liveData = await liveResponse.json(); } catch {}
+
+      if (liveResponse.ok && liveData?.answer) {
+        return liveData.answer;
+      }
+    } catch {}
+  }
+
   const intent = aiIntent(message);
 
   if (intent.type === "emergency") {
