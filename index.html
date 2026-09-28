@@ -660,9 +660,15 @@ function aiHasAny(message, groups) {
 }
 
 function aiDateInfo(message) {
-  const tomorrow = aiHas(message, "कल", "tomorrow");
+  const normalized = aiNormalize(message);
+  const tomorrow =
+    /(^| )कल( |$)/.test(normalized) ||
+    /(^| )tomorrow( |$)/.test(normalized);
+
+  const date = aiIndiaDate(tomorrow ? 1 : 0);
+
   return {
-    date: aiIndiaDate(tomorrow ? 1 : 0),
+    date,
     label: tomorrow ? "कल" : "आज"
   };
 }
