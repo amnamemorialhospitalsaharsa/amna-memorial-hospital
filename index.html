@@ -777,7 +777,7 @@ async function smartHospitalAssistant(message){
     if(d)return "👩‍⚕️ महिला/गायनेकोलॉजी consultation के लिए:\n"+(d.name_hi||d.name_en)+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\n🕐 सामान्य OPD: "+d.opd_time:"")+"\n\nOPD availability date-wise बदल सकती है। आज की availability पूछें तो मैं published schedule check कर सकता हूँ।"+(d.profile_slug?"\n\nDoctor profile: "+d.profile_slug+".html":"");
   }
 
-  if(has("घुटना","घुटने","जोड़","जोड़ों","हड्डी","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","orthopedic","orthopaedic","ऑर्थोपेडिक")){
+  if(has("घुटना","घुटने","ghutna","ghutne","ghutno","जोड़","जोड़ों","jod","jodon","हड्डी","haddi","फ्रैक्चर","fracture","knee","joint","bone","प्लास्टर","plaster","orthopedic","orthopaedic","ऑर्थोपेडिक")){
     const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
     if(error)throw error;
     const d=(data||[]).find(x=>((x.name_hi||"")+" "+(x.name_en||"")).toLowerCase().includes("अबुल") || ((x.specialty_hi||"")+" "+(x.specialty_en||"")).toLowerCase().includes("orthop"));
