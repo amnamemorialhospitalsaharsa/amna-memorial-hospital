@@ -607,6 +607,26 @@ async function smartHospitalAssistant(message){
   const q=message.toLowerCase().trim();
   const norm=q.replace(/[?？!！.,।]/g," ");
   const has=(...words)=>words.some(w=>norm.includes(w));
+  const asksToday=has("आज","today","आज कौन","आज की");
+  const asksDoctors=has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक");
+  const asksOpd=has("opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
+
+  if(asksToday && (asksDoctors || asksOpd)){
+    const today=new Date().toISOString().slice(0,10);
+    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",today);
+    if(error)throw error;
+    const rows=data||[];
+    if(!rows.length)return "आज ("+today+") के लिए कोई published OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से OPD timing/availability confirm करें।";
+    const ids=[...new Set(rows.map(x=>x.doctor_id).filter(Boolean))];
+    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
+    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
+    const available=rows.filter(r=>String(r.status||"").toLowerCase()==="available");
+    if(!available.length)return "आज के लिए schedule उपलब्ध है, लेकिन किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
+    return "आज उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{
+      const d=map.get(String(r.doctor_id));
+      return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?"\nOPD: "+d.opd_time:"")+(r.note?"\n"+r.note:"");
+    }).join("\n\n");
+  }
 
   if(has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक","कौन डॉक्टर")){
     const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
