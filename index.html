@@ -658,24 +658,6 @@ async function smartHospitalAssistant(message){
     }).join("\n\n");
   }
 
-  if(asksDoctors && !asksToday && !asksTomorrow){
-    const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    if(!data?.length)return "अभी डॉक्टर की जानकारी उपलब्ध नहीं है। कृपया अस्पताल से संपर्क करें।";
-
-    const doctorMatch=data.find(d=>{
-      const name=(d.name_hi+" "+(d.name_en||"")).toLowerCase();
-      const tokens=name.split(/\s+/).filter(x=>x.length>2);
-      return tokens.some(t=>norm.includes(t)) || (has("अबुल","abul","kalam","कलाम") && name.includes("अबुल")) || (has("तारिक","tarique","tariq") && name.includes("तारिक")) || (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && name.includes("हिना"));
-    });
-
-    if(doctorMatch){
-      return "👨‍⚕️ "+(doctorMatch.name_hi||doctorMatch.name_en||"Doctor")+"\n"+(doctorMatch.specialty_hi||doctorMatch.specialty_en||"")+"\n"+(doctorMatch.qualification||"")+(doctorMatch.opd_time?"\n🕐 OPD: "+doctorMatch.opd_time:"")+(doctorMatch.profile_slug?"\n\nDoctor profile: "+doctorMatch.profile_slug+".html":"");
-    }
-
-    return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
-  }
-
   const requestedDoctor =
     norm.includes("अबुल कलाम") || norm.includes("abul kalam") ? "abul" :
     norm.includes("मो तारिक") || norm.includes("मो. तारिक") || norm.includes("मो0 तारिक") || norm.includes("tarique") || norm.includes("tariq") ? "tariq" :
@@ -699,6 +681,25 @@ async function smartHospitalAssistant(message){
       }
       return "👨‍⚕️ "+(doctor.name_hi||doctor.name_en)+"\n🕐 सामान्य OPD: "+(doctor.opd_time||"अस्पताल से confirm करें")+"\n\n"+dateLabel+" के लिए कोई published OPD entry उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
     }
+  }
+
+
+  if(asksDoctors && !asksToday && !asksTomorrow){
+    const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    if(!data?.length)return "अभी डॉक्टर की जानकारी उपलब्ध नहीं है। कृपया अस्पताल से संपर्क करें।";
+
+    const doctorMatch=data.find(d=>{
+      const name=(d.name_hi+" "+(d.name_en||"")).toLowerCase();
+      const tokens=name.split(/\s+/).filter(x=>x.length>2);
+      return tokens.some(t=>norm.includes(t)) || (has("अबुल","abul","kalam","कलाम") && name.includes("अबुल")) || (has("तारिक","tarique","tariq") && name.includes("तारिक")) || (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && name.includes("हिना"));
+    });
+
+    if(doctorMatch){
+      return "👨‍⚕️ "+(doctorMatch.name_hi||doctorMatch.name_en||"Doctor")+"\n"+(doctorMatch.specialty_hi||doctorMatch.specialty_en||"")+"\n"+(doctorMatch.qualification||"")+(doctorMatch.opd_time?"\n🕐 OPD: "+doctorMatch.opd_time:"")+(doctorMatch.profile_slug?"\n\nDoctor profile: "+doctorMatch.profile_slug+".html":"");
+    }
+
+    return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
   }
 
   if(asksOpd && asksDoctors){
