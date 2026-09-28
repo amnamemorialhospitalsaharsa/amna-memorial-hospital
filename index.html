@@ -603,27 +603,62 @@ document.addEventListener("keydown",e=>{
 });
 window.addEventListener("scroll",()=>topBtn.classList.toggle("show",window.scrollY>450));topBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));loadHospitalData();
 
-async function ensureAiAuth(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session?.access_token)return session.access_token;
-  const {data,error}=await sb.auth.signInAnonymously();
-  if(error)throw error;
-  return data.session?.access_token||"";
-}
-async function askHospitalAI(message){
-  const token=await ensureAiAuth();
-  const response=await fetch(SUPABASE_URL+"/functions/v1/hospital-ai",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "apikey":SUPABASE_PUBLISHABLE_KEY,
-      "Authorization":"Bearer "+token
-    },
-    body:JSON.stringify({message,language:"hi"})
-  });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error(data?.error||"AI service unavailable");
-  return data.answer||"माफ़ कीजिए, अभी उत्तर उपलब्ध नहीं है।";
+async function smartHospitalAssistant(message){
+  const q=message.toLowerCase().trim();
+  const norm=q.replace(/[?？!！.,।]/g," ");
+  const has=(...words)=>words.some(w=>norm.includes(w));
+
+  if(has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक","कौन डॉक्टर")){
+    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    if(!data?.length)return "अभी डॉक्टर की जानकारी उपलब्ध नहीं है। कृपया अस्पताल से संपर्क करें।";
+    return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
+  }
+
+  if(has("service","services","सेवा","इलाज","facility","सुविधा")){
+    const {data,error}=await sb.from("services").select("title_hi,title_en,short_description").eq("is_active",true).eq("is_published",true).order("sort_order");
+    if(error)throw error;
+    if(!data?.length)return "अभी services की जानकारी उपलब्ध नहीं है।";
+    return "अस्पताल की उपलब्ध सेवाएँ:\n\n"+data.map((s,i)=>(i+1)+". "+(s.title_hi||s.title_en||"Service")+(s.short_description?" — "+s.short_description:"")).join("\n");
+  }
+
+  if(has("opd","ओपीडी","timing","time","समय","कब","आज","today","schedule","शेड्यूल")){
+    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,joint_injection,note").eq("is_published",true).order("schedule_date",{ascending:false}).limit(50);
+    if(error)throw error;
+    const rows=data||[];
+    if(!rows.length)return "अभी OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से OPD timing confirm करें।";
+    const ids=[...new Set(rows.map(x=>x.doctor_id).filter(Boolean))];
+    const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
+    const map=new Map((docs||[]).map(d=>[String(d.id),d]));
+    return "उपलब्ध OPD जानकारी:\n\n"+rows.slice(0,12).map(r=>{
+      const d=map.get(String(r.doctor_id));
+      return "• "+(d?.name_hi||d?.name_en||"Doctor")+" — "+(r.status||"Status")+ (d?.opd_time?" — "+d.opd_time:"")+(r.note?"\n  "+r.note:"");
+    }).join("\n");
+  }
+
+  if(has("appointment","अपॉइंटमेंट","booking","बुक","नंबर","number","contact","संपर्क","whatsapp","व्हाट्सएप")){
+    const {data,error}=await sb.from("whatsapp_settings").select("*").limit(1).maybeSingle();
+    if(error)throw error;
+    const number=data?.appointment_number||data?.general_number||"918051246461";
+    return "Appointment के लिए WhatsApp पर संपर्क करें: +"+String(number).replace(/[^0-9]/g,"")+"\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
+  }
+
+  if(has("address","location","पता","कहाँ","कहां","लोकेशन","सहरसा","saharsa","map")){
+    return "Amna Memorial Hospital का पता:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए website पर 📍 Directions बटन इस्तेमाल करें।";
+  }
+
+  if(has("emergency","इमरजेंसी","आपात","urgent","ambulance")){
+    return "Emergency की स्थिति में hospital से तुरंत संपर्क करें: +91 82949 05389. गंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
+  }
+
+  if(has("update","notice","सूचना","अपडेट","strike","हड़ताल")){
+    const {data,error}=await sb.from("hospital_updates").select("title_hi,title_en,body_hi,body_en,publish_date").eq("is_published",true).order("publish_date",{ascending:false}).limit(3);
+    if(error)throw error;
+    if(!data?.length)return "अभी कोई नई published hospital update उपलब्ध नहीं है।";
+    return "हाल की hospital updates:\n\n"+data.map(x=>"• "+(x.title_hi||x.title_en||"Update")+(x.body_hi?"\n"+x.body_hi:"")).join("\n\n");
+  }
+
+  return "मैं hospital की जानकारी देने वाला Smart Assistant हूँ। आप मुझसे ये पूछ सकते हैं:\n\n• कौन-कौन से डॉक्टर हैं?\n• डॉक्टर की OPD timing क्या है?\n• अस्पताल में कौन-कौन सी services हैं?\n• Appointment कैसे लें?\n• अस्पताल का पता/लोकेशन क्या है?\n• Emergency contact क्या है?\n• Hospital की latest update क्या है?";
 }
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
 document.getElementById("aiChatLauncher").addEventListener("click",()=>{aiChat.classList.add("open");aiInput.focus();});
@@ -633,10 +668,10 @@ document.getElementById("aiForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const message=aiInput.value.trim();if(!message)return;
   addAiMessage(message,"user");aiInput.value="";aiInput.disabled=true;
-  addAiMessage("उत्तर तैयार हो रहा है…","bot");
+  addAiMessage("जानकारी देखी जा रही है…","bot");
   const pending=aiMessages.lastElementChild;
-  try{pending.textContent=await askHospitalAI(message);}
-  catch(err){pending.textContent="AI error: "+(err?.message||"Unknown error");}
+  try{pending.textContent=await smartHospitalAssistant(message);}
+  catch(err){pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया hospital से संपर्क करें।";}
   finally{aiInput.disabled=false;aiInput.focus();aiMessages.scrollTop=aiMessages.scrollHeight;}
 });
 
