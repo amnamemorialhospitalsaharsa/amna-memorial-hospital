@@ -608,42 +608,65 @@ async function smartHospitalAssistant(message){
   const norm=q.replace(/[?？!！.,।]/g," ");
   const has=(...words)=>words.some(w=>norm.includes(w));
   const asksToday=has("आज","today","आज कौन","आज की");
+  const asksTomorrow=has("कल","tomorrow","tomorrow's","कल कौन","कल की");
   const asksDoctors=has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक");
   const asksOpd=has("opd","ओपीडी","timing","time","समय","कब","schedule","शेड्यूल");
+  const asksAppointment=has("appointment","अपॉइंटमेंट","booking","बुक","बुकिंग","appointment कैसे","अपॉइंटमेंट कैसे");
+  const asksEmergency=has("emergency","इमरजेंसी","आपात","urgent","ambulance");
+  const today=new Date();
+  const targetDate=new Date(today);
+  if(asksTomorrow)targetDate.setDate(targetDate.getDate()+1);
+  const targetDateStr=targetDate.toISOString().slice(0,10);
+  const dateLabel=asksTomorrow?"कल":"आज";
 
-  if(asksToday && (asksDoctors || asksOpd)){
-    const today=new Date().toISOString().slice(0,10);
-    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",today);
+  if(asksEmergency){
+    return "🚑 Emergency के लिए तुरंत अस्पताल से संपर्क करें:\n+91 82949 05389\n\nगंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
+  }
+
+  if(asksAppointment){
+    const {data,error}=await sb.from("whatsapp_settings").select("*").limit(1).maybeSingle();
+    if(error)throw error;
+    const raw=String(data?.appointment_number||data?.general_number||"918051246461").replace(/[^0-9]/g,"");
+    const number=raw.startsWith("91")?raw:"91"+raw.replace(/^0+/,"");
+    return "📲 Appointment के लिए WhatsApp:\n+"+number+"\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
+  }
+
+  if((asksToday||asksTomorrow) && (asksDoctors||asksOpd)){
+    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).eq("schedule_date",targetDateStr);
     if(error)throw error;
     const rows=data||[];
-    if(!rows.length)return "आज ("+today+") के लिए कोई published OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से OPD timing/availability confirm करें।";
+    if(!rows.length)return dateLabel+" ("+targetDateStr+") के लिए कोई published OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से availability confirm करें।";
     const ids=[...new Set(rows.map(x=>x.doctor_id).filter(Boolean))];
     const {data:docs}=ids.length?await sb.from("doctors").select("id,name_hi,name_en,opd_time").in("id",ids):{data:[]};
     const map=new Map((docs||[]).map(d=>[String(d.id),d]));
     const available=rows.filter(r=>String(r.status||"").toLowerCase()==="available");
-    if(!available.length)return "आज के लिए schedule उपलब्ध है, लेकिन किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
-    return "आज उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{
+    if(!available.length)return dateLabel+" के लिए schedule उपलब्ध है, लेकिन किसी doctor को Available के रूप में publish नहीं किया गया है। कृपया अस्पताल से availability confirm करें।";
+    return "📅 "+dateLabel+" उपलब्ध डॉक्टर:\n\n"+available.map((r,i)=>{
       const d=map.get(String(r.doctor_id));
       return (i+1)+". "+(d?.name_hi||d?.name_en||"Doctor")+(d?.opd_time?"\nOPD: "+d.opd_time:"")+(r.note?"\n"+r.note:"");
     }).join("\n\n");
   }
 
-  if(has("doctor","doctors","डॉक्टर","डाक्टर","चिकित्सक","कौन डॉक्टर")){
-    const {data,error}=await sb.from("doctors").select("name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time").eq("is_active",true).eq("is_published",true).order("sort_order");
+  if(asksDoctors && !asksToday && !asksTomorrow){
+    const {data,error}=await sb.from("doctors").select("id,name_hi,name_en,qualification,specialty_hi,specialty_en,opd_time,profile_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
     if(error)throw error;
     if(!data?.length)return "अभी डॉक्टर की जानकारी उपलब्ध नहीं है। कृपया अस्पताल से संपर्क करें।";
+
+    const doctorMatch=data.find(d=>{
+      const name=(d.name_hi+" "+(d.name_en||"")).toLowerCase();
+      const tokens=name.split(/\s+/).filter(x=>x.length>2);
+      return tokens.some(t=>norm.includes(t)) || (has("अबुल","abul","kalam","कलाम") && name.includes("अबुल")) || (has("तारिक","tarique","tariq") && name.includes("तारिक")) || (has("हिना","hena","farooqui","फारूकी","फ़ारूक़ी") && name.includes("हिना"));
+    });
+
+    if(doctorMatch){
+      return "👨‍⚕️ "+(doctorMatch.name_hi||doctorMatch.name_en||"Doctor")+"\n"+(doctorMatch.specialty_hi||doctorMatch.specialty_en||"")+"\n"+(doctorMatch.qualification||"")+(doctorMatch.opd_time?"\n🕐 OPD: "+doctorMatch.opd_time:"")+(doctorMatch.profile_slug?"\n\nDoctor profile: "+doctorMatch.profile_slug+".html":"");
+    }
+
     return "अस्पताल में उपलब्ध डॉक्टर:\n\n"+data.map((d,i)=>(i+1)+". "+(d.name_hi||d.name_en||"Doctor")+"\n"+(d.specialty_hi||d.specialty_en||"")+"\n"+(d.qualification||"")+(d.opd_time?"\nOPD: "+d.opd_time:"")).join("\n\n");
   }
 
-  if(has("service","services","सेवा","इलाज","facility","सुविधा")){
-    const {data,error}=await sb.from("services").select("title_hi,title_en,short_description").eq("is_active",true).eq("is_published",true).order("sort_order");
-    if(error)throw error;
-    if(!data?.length)return "अभी services की जानकारी उपलब्ध नहीं है।";
-    return "अस्पताल की उपलब्ध सेवाएँ:\n\n"+data.map((s,i)=>(i+1)+". "+(s.title_hi||s.title_en||"Service")+(s.short_description?" — "+s.short_description:"")).join("\n");
-  }
-
-  if(has("opd","ओपीडी","timing","time","समय","कब","आज","today","schedule","शेड्यूल")){
-    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,joint_injection,note").eq("is_published",true).order("schedule_date",{ascending:false}).limit(50);
+  if(asksOpd){
+    const {data,error}=await sb.from("opd_schedule").select("doctor_id,schedule_date,status,note").eq("is_published",true).order("schedule_date",{ascending:false}).limit(50);
     if(error)throw error;
     const rows=data||[];
     if(!rows.length)return "अभी OPD schedule उपलब्ध नहीं है। कृपया अस्पताल से OPD timing confirm करें।";
@@ -652,34 +675,33 @@ async function smartHospitalAssistant(message){
     const map=new Map((docs||[]).map(d=>[String(d.id),d]));
     return "उपलब्ध OPD जानकारी:\n\n"+rows.slice(0,12).map(r=>{
       const d=map.get(String(r.doctor_id));
-      return "• "+(d?.name_hi||d?.name_en||"Doctor")+" — "+(r.status||"Status")+ (d?.opd_time?" — "+d.opd_time:"")+(r.note?"\n  "+r.note:"");
+      return "• "+(d?.name_hi||d?.name_en||"Doctor")+" — "+(r.status||"Status")+(d?.opd_time?" — "+d.opd_time:"")+(r.note?"\n  "+r.note:"");
     }).join("\n");
   }
 
-  if(has("appointment","अपॉइंटमेंट","booking","बुक","नंबर","number","contact","संपर्क","whatsapp","व्हाट्सएप")){
-    const {data,error}=await sb.from("whatsapp_settings").select("*").limit(1).maybeSingle();
+  if(has("service","services","सेवा","इलाज","facility","सुविधा")){
+    const {data,error}=await sb.from("services").select("title_hi,title_en,short_description,page_slug").eq("is_active",true).eq("is_published",true).order("sort_order");
     if(error)throw error;
-    const raw=String(data?.appointment_number||data?.general_number||"918051246461").replace(/[^0-9]/g,""); const number=raw.startsWith("91")?raw:"91"+raw.replace(/^0+/,"");
-    return "Appointment के लिए WhatsApp पर संपर्क करें: +"+String(number).replace(/[^0-9]/g,"")+"\n\nWebsite के Appointment section से भी request भेज सकते हैं। Final confirmation hospital team द्वारा दी जाएगी।";
+    if(!data?.length)return "अभी services की जानकारी उपलब्ध नहीं है।";
+    const match=data.find(s=>has((s.title_hi||"").toLowerCase(),(s.title_en||"").toLowerCase()));
+    if(match)return "🏥 "+(match.title_hi||match.title_en)+"\n"+(match.short_description||"")+(match.page_slug?"\n\nसेवा विवरण: "+match.page_slug+".html":"");
+    return "अस्पताल की उपलब्ध सेवाएँ:\n\n"+data.map((s,i)=>(i+1)+". "+(s.title_hi||s.title_en||"Service")+(s.short_description?" — "+s.short_description:"")).join("\n");
   }
 
   if(has("address","location","पता","कहाँ","कहां","लोकेशन","सहरसा","saharsa","map")){
-    return "Amna Memorial Hospital का पता:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए website पर 📍 Directions बटन इस्तेमाल करें।";
-  }
-
-  if(has("emergency","इमरजेंसी","आपात","urgent","ambulance")){
-    return "Emergency की स्थिति में hospital से तुरंत संपर्क करें: +91 82949 05389. गंभीर स्थिति में स्थानीय emergency services से भी संपर्क करें।";
+    return "📍 Amna Memorial Hospital का पता:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए website पर 📍 Directions बटन इस्तेमाल करें।";
   }
 
   if(has("update","notice","सूचना","अपडेट","strike","हड़ताल")){
     const {data,error}=await sb.from("hospital_updates").select("title_hi,title_en,body_hi,body_en,publish_date").eq("is_published",true).order("publish_date",{ascending:false}).limit(3);
     if(error)throw error;
     if(!data?.length)return "अभी कोई नई published hospital update उपलब्ध नहीं है।";
-    return "हाल की hospital updates:\n\n"+data.map(x=>"• "+(x.title_hi||x.title_en||"Update")+(x.body_hi?"\n"+x.body_hi:"")).join("\n\n");
+    return "📢 हाल की hospital updates:\n\n"+data.map(x=>"• "+(x.title_hi||x.title_en||"Update")+(x.body_hi?"\n"+x.body_hi:"")).join("\n\n");
   }
 
-  return "मैं hospital की जानकारी देने वाला Smart Assistant हूँ। आप मुझसे ये पूछ सकते हैं:\n\n• कौन-कौन से डॉक्टर हैं?\n• डॉक्टर की OPD timing क्या है?\n• अस्पताल में कौन-कौन सी services हैं?\n• Appointment कैसे लें?\n• अस्पताल का पता/लोकेशन क्या है?\n• Emergency contact क्या है?\n• Hospital की latest update क्या है?";
+  return "मैं hospital की जानकारी देने वाला Smart Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• कौन-कौन से डॉक्टर हैं?\n• डॉ. अबुल कलाम की OPD कब है?\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• अस्पताल में कौन-कौन सी services हैं?\n• Appointment कैसे लें?\n• Emergency number क्या है?\n• अस्पताल का पता/लोकेशन क्या है?\n• Hospital की latest update क्या है?";
 }
+
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput");
 document.getElementById("aiChatLauncher").addEventListener("click",()=>{aiChat.classList.add("open");aiInput.focus();});
 document.getElementById("aiClose").addEventListener("click",()=>aiChat.classList.remove("open"));
