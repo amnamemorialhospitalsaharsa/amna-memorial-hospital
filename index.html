@@ -539,7 +539,7 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   <div class="ai-note">⚠️ यह जानकारी के लिए है; diagnosis या emergency treatment के लिए hospital/doctor से संपर्क करें।</div>
   <form class="ai-form" id="aiForm" onsubmit="event.preventDefault(); window.handleAiSubmit(event); return false;">
     <input class="ai-input" id="aiInput" autocomplete="off" placeholder="अपना सवाल लिखें..." maxlength="1000" required>
-    <button class="ai-send" id="aiSend" type="button" onclick="if(window.handleAiSubmit){window.handleAiSubmit(event);}">Send</button>
+    <button class="ai-send" id="aiSend" type="button" onclick="return window.sendAiNow ? window.sendAiNow() : false;">Send</button>
   </form>
 </div>
 
@@ -939,6 +939,27 @@ async function smartHospitalAssistant(message){
 
   return "मैं Amna Memorial Hospital का Smart Patient Assistant हूँ। आप मुझसे पूछ सकते हैं:\n\n• आज/कल कौन डॉक्टर उपलब्ध है?\n• किसी doctor की OPD कब है?\n• मेरी समस्या के लिए कौन-सा department/doctor relevant है?\n• Appointment कैसे लें या reschedule करें?\n• Patient registration कैसे करें?\n• CT Scan / X-Ray / Ultrasound / Pathology / BMD की जानकारी\n• Admission / IPD / ICU / NICU की जानकारी\n• Surgery / Laparoscopy / Laser Surgery की जानकारी\n• Pharmacy / Surgical Shop की जानकारी\n• अस्पताल का पता, Directions या Emergency number\n\nमैं diagnosis या prescription नहीं देता; medical decision doctor की consultation के बाद लें।";
 }
+
+window.smartHospitalAssistant=smartHospitalAssistant;
+window.sendAiNow=async function(){
+  const input=document.getElementById("aiInput"), messages=document.getElementById("aiMessages");
+  if(!input||!messages)return false;
+  const message=input.value.trim();
+  if(!message)return false;
+  const user=document.createElement("div"); user.className="ai-msg user"; user.textContent=message; messages.appendChild(user);
+  input.value=""; input.disabled=true;
+  const pending=document.createElement("div"); pending.className="ai-msg bot"; pending.textContent="जानकारी देखी जा रही है…"; messages.appendChild(pending);
+  messages.scrollTop=messages.scrollHeight;
+  try{
+    const answer=await window.smartHospitalAssistant(message);
+    renderAiMessage(pending,answer);
+  }catch(err){
+    pending.textContent="अभी जानकारी प्राप्त नहीं हो सकी। कृपया दोबारा प्रयास करें।";
+  }finally{
+    input.disabled=false; input.focus(); messages.scrollTop=messages.scrollHeight;
+  }
+  return false;
+};
 
 const aiChat=document.getElementById("aiChat"),aiMessages=document.getElementById("aiMessages"),aiInput=document.getElementById("aiInput"),aiChatLauncher=document.getElementById("aiChatLauncher");
 // Robust mobile initialization: ensure the launcher works even if another script fails earlier.
