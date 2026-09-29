@@ -1101,208 +1101,51 @@ function aiIntent(message) {
 }
 
 async function smartHospitalAssistant(message) {
-  const normalizedMessage = aiNormalize(message);
+  /* PERMANENT ARCHITECTURE:
+     Patient -> Website -> hospital-ai -> Supabase Database -> Answer.
+     The browser never decides hospital facts such as doctor/date/availability. */
+  const value = String(message || "").trim();
+  if (!value) return "कृपया अपना सवाल लिखें।";
 
-  // Live availability questions must go to the Supabase backend first.
-  // This keeps doctor/date/OPD availability in one source of truth
-  // instead of duplicating date and doctor routing in the frontend.
-  const liveAvailabilityQuestion = aiHas(
-    normalizedMessage,
-    "available",
-    "availability",
-    "उपलब्ध",
-    "कौन डॉक्टर",
-    "कौन-कौन डॉक्टर",
-    "कौन कौन डॉक्टर",
-    "doctor available",
-    "doctor availability"
-  );
+  const EDGE_FUNCTION = SUPABASE_URL + "/functions/v1/hospital-ai";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxeXNodGZscGlodWZub2x1cGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTI2MjQsImV4cCI6MjEwNTM2ODYyNH0.QCK4caW0pND0xpg1104u20EL8W1pmj-YMPFRrGzEU";
 
-  if (liveAvailabilityQuestion) {
-    try {
-      const liveResponse = await fetch(
-        "https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_PUBLISHABLE_KEY,
-            "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
-          },
-          body: JSON.stringify({ message })
-        }
-      );
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
 
-      let liveData = {};
-      try { liveData = await liveResponse.json(); } catch {}
-
-      if (liveResponse.ok && liveData?.answer) {
-        return liveData.answer;
-      }
-    } catch {}
-
-    // If the Edge Function gateway is temporarily unavailable, use the
-    // same published OPD table directly. Never turn "no row" into
-    // "Unavailable".
-    try {
-      const key = aiDoctorKey(message);
-      if (key) return await aiDoctorAvailability(message, key);
-      return await aiAvailability(message);
-    } catch {}
-  }
-
-  const intent = aiIntent(message);
-
-  if (intent.type === "emergency") {
-    return "🚑 Emergency के लिए तुरंत hospital से संपर्क करें:\n" +
-      AI_CONFIG.emergencyPhone +
-      "\n\nगंभीर स्थिति में local emergency services से भी संपर्क करें।";
-  }
-
-  if (intent.type === "appointment") {
-    const doctorLine = intent.doctorKey === "abul" ? "\n\n👨‍⚕️ डॉ. अबुल कलाम से appointment के लिए request में उनका नाम लिखें।" :
-      intent.doctorKey === "tariq" ? "\n\n👨‍⚕️ डॉ. प्रो0 मो0 तारिक से appointment के लिए request में उनका नाम लिखें।" :
-      intent.doctorKey === "hena" ? "\n\n👩‍⚕️ डॉ. प्रो0 हिना फ़ारूक़ी से appointment के लिए request में उनका नाम लिखें।" : "";
-
-    return "📲 Appointment के लिए WhatsApp:\n+91 80512 46461\n\n" +
-      "अपना नाम, mobile number, preferred doctor/date/time और समस्या का संक्षिप्त विवरण भेजें। " +
-      "Final confirmation hospital team द्वारा दी जाएगी." + doctorLine;
-  }
-
-  if (intent.type === "appointment_change") {
-    return "📅 Appointment cancel/reschedule या date/time change करने के लिए WhatsApp करें:\n" +
-      "+91 80512 46461\n\nPatient name, mobile number और requested change भेजें। Final confirmation hospital team द्वारा दी जाएगी।";
-  }
-
-  if (intent.type === "availability") return aiAvailability(message);
-  if (intent.type === "doctor_availability") return aiDoctorAvailability(message, intent.doctorKey);
-  if (intent.type === "doctor_opd") return aiDoctorOpd(message, intent.doctorKey);
-  if (intent.type === "doctor_surgery") return aiDoctorSurgery(intent.doctorKey);
-  if (intent.type === "doctor_info") return aiDoctorInfo(intent.doctorKey);
-
-  if (intent.type === "doctor_list") {
-    const doctors = await aiDoctors();
-    if (!doctors.length) return "अभी published doctor information उपलब्ध नहीं है।";
-
-    return "👨‍⚕️ Hospital में listed doctors:\n\n" +
-      doctors.map((d, i) => (i + 1) + ". " + aiDoctorText(d)).join("\n\n");
-  }
-
-  if (intent.type === "diagnostic") {
-    return "🩻 Hospital में CT Scan और Digital X-Ray services listed हैं।\n\nAvailability, timing और preparation के लिए hospital से confirm करें। Report की interpretation doctor से कराएँ।";
-  }
-
-  if (intent.type === "ultrasound") {
-    return "🔎 Hospital में Ultrasound (USG) diagnostic service listed है।\n\nAvailability, timing और preparation के लिए hospital से confirm करें।";
-  }
-
-  if (intent.type === "pathology") {
-    return "🧪 Hospital में Pathology / in-house laboratory service listed है।\n\nTest availability, timing और sample preparation hospital से confirm करें।";
-  }
-
-  if (intent.type === "bmd") {
-    return "🦴 Hospital में BMD Test (Bone Mineral Density assessment) listed है।\n\nAvailability और timing के लिए hospital से confirm करें।";
-  }
-
-  if (intent.type === "icu") {
-    return "🫀 Hospital में ICU / Critical Care support listed है।\n\nICU bed availability और admission decision medical team से confirm करें।";
-  }
-
-  if (intent.type === "nicu") {
-    return "👶 Hospital में NICU / newborn intensive care support listed है।\n\nNICU availability और admission requirements hospital team से तुरंत confirm करें।";
-  }
-
-  if (intent.type === "admission") {
-    return "🏥 Hospital में IPD (inpatient admission and care) service listed है।\n\nAdmission eligibility, bed availability, documents और charges hospital team से confirm करें। Emergency में पहले emergency desk से संपर्क करें।";
-  }
-
-  if (intent.type === "pharmacy") {
-    return "💊 Hospital में Pharmacy service listed है।\n\nMedicine availability और timing के लिए hospital pharmacy से confirm करें। यह assistant prescription या dose नहीं बताता।";
-  }
-
-  if (intent.type === "surgical_shop") {
-    return "🛒 Hospital में Surgical Shop / surgical and medical supplies service listed है।\n\nItem availability hospital team से confirm करें।";
-  }
-
-  if (intent.type === "registration") {
-    return "📝 Patient Registration website के Patient Registration section से किया जा सकता है।\n\nसमस्या हो तो +91 80512 46461 पर संपर्क करें।";
-  }
-
-  if (intent.type === "orthopaedic") {
-    const doctor = aiDoctorByKey(await aiDoctors(), "abul");
-    return "🦴 हड्डी/जोड़/Orthopaedic समस्या के लिए:\n\n" +
-      (doctor ? aiDoctorText(doctor) : "Orthopaedic doctor information उपलब्ध नहीं है।") +
-      "\n\nयह assistant diagnosis या treatment prescribe नहीं करता।";
-  }
-
-  if (intent.type === "gynaecology") {
-    const doctor = aiDoctorByKey(await aiDoctors(), "hena");
-    let answer = "👩‍⚕️ महिला/Gynaecology consultation के लिए:\n\n" +
-      (doctor ? aiDoctorText(doctor) : "Doctor information उपलब्ध नहीं है।") +
-      "\n\nPregnancy और महिलाओं से संबंधित स्वास्थ्य समस्याओं के लिए consultation उपलब्ध है।";
-
-    const di = aiDateInfo(message);
-    if (doctor && (di.label === "आज" || di.label === "कल")) {
-      const rows = await aiSchedule(di.date, doctor.id);
-
-      if (!rows.length) {
-        answer += "\n\n📅 " + di.label + " (" + di.date + ") के लिए कोई published OPD entry उपलब्ध नहीं है।";
-      } else {
-        const row = rows[0];
-        answer += "\n\n📅 " + di.label + " की availability: " +
-          (String(row.status || "").toLowerCase() === "available" ? "✅ Available" : "❌ Unavailable") +
-          (row.note ? "\n" + row.note : "");
-      }
-
-      answer += "\nActual availability hospital से confirm करें।";
-    }
-
-    return answer;
-  }
-
-  if (intent.type === "surgery") {
-    const doctor = aiDoctorByKey(await aiDoctors(), "tariq");
-    return "🏥 Surgical consultation के लिए:\n\n" +
-      (doctor ? aiDoctorText(doctor) : "") +
-      "\n\nListed services: General Surgery, Laparoscopic Surgery और Laser Surgery.\n\nकिसी operation/procedure की suitability doctor की clinical examination के बाद तय की जाती है।";
-  }
-
-  if (intent.type === "address") {
-    return "📍 Amna Memorial Hospital:\nMir Tola, Bangaon Road, Near Mashomat Pokhar, Saharsa - 852201, Bihar.\n\nDirections के लिए नीचे दिए गए 📍 Directions button का इस्तेमाल करें।";
-  }
-
-  if (intent.type === "hospital_timing") {
-    return "🏥 Emergency & Casualty service 24×7 listed है.\n\nOPD और doctor availability date-wise published schedule पर निर्भर करती है।";
-  }
-
-  if (intent.type === "first_visit") {
-    return "👤 पहली visit के लिए appointment/OPD availability पहले confirm करना उपयोगी है। पुराने reports/prescriptions हों तो साथ रखें।\n\nRegistration/appointment: +91 80512 46461";
-  }
-
-  if (intent.type === "report") {
-    return "📄 Test reports की clinical interpretation doctor से कराएँ। Hospital में Pathology, CT Scan, Digital X-Ray, Ultrasound और BMD जैसी diagnostic services listed हैं।";
-  }
-
-  if (intent.type === "services") return aiServicesAnswer(message);
-
-  // Only genuinely unrecognized questions go to the protected backend AI.
-  const response = await fetch(
-    "https://yqyshtflpihufnolupgw.supabase.co/functions/v1/hospital-ai",
-    {
+  try {
+    const response = await fetch(EDGE_FUNCTION, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        "apikey": SUPABASE_PUBLISHABLE_KEY
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + SUPABASE_ANON_KEY
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message: value })
+    });
+
+    let data = {};
+    try { data = await response.json(); } catch (_) {}
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Hospital AI request failed");
     }
-  );
 
-  let data = {};
-  try { data = await response.json(); } catch {}
-
-  if (!response.ok) throw new Error(data?.error || "AI provider request failed");
-  return data?.answer || "अभी कोई जवाब प्राप्त नहीं हुआ।";
+    return String(
+      data?.answer ||
+      "माफ़ कीजिए, अभी कोई जवाब उपलब्ध नहीं है। कृपया hospital से संपर्क करें।"
+    );
+  } catch (error) {
+    console.error("Hospital AI backend error:", error);
+    if (error?.name === "AbortError") {
+      return "⏳ जानकारी प्राप्त करने में थोड़ा समय लग रहा है। कृपया दोबारा प्रयास करें।";
+    }
+    return "अभी hospital AI service से जानकारी प्राप्त नहीं हो सकी। कृपया थोड़ी देर बाद दोबारा प्रयास करें या +91 80512 46461 पर संपर्क करें।";
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function renderAiMessage(el, text) {
