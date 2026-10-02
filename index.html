@@ -575,6 +575,8 @@ async function loadPublicContact(){
   if(error || !data || !data.length) return;
   HOSPITAL_CONTACT=data[0];
   WHATSAPP=String(HOSPITAL_CONTACT.appointment_number||WHATSAPP).replace(/\D/g,"");
+  AI_CONFIG.appointmentWhatsApp=WHATSAPP;
+  AI_CONFIG.emergencyPhone="+"+String(HOSPITAL_CONTACT.emergency_number||HOSPITAL_CONTACT.general_number||"8294905389").replace(/\D/g,"");
   document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a=>{
     const url=new URL(a.href); url.pathname="/"+WHATSAPP; a.href=url.toString();
   });
