@@ -574,20 +574,20 @@ async function loadPublicContact(){
   const {data,error}=await sb.rpc("get_public_hospital_contact");
   if(error || !data || !data.length) return;
   HOSPITAL_CONTACT=data[0];
-  WHATSAPP=String(HOSPITAL_CONTACT.appointment_number||WHATSAPP).replace(/\\D/g,"");
+  WHATSAPP=String(HOSPITAL_CONTACT.appointment_number||WHATSAPP).replace(/\D/g,"");
   document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a=>{
     const url=new URL(a.href); url.pathname="/"+WHATSAPP; a.href=url.toString();
   });
   document.querySelectorAll('a[href^="tel:"]').forEach(a=>{
     const isEmergency=a.classList.contains("emergency");
     const number=isEmergency?HOSPITAL_CONTACT.emergency_number:HOSPITAL_CONTACT.general_number;
-    if(number) a.href="tel:+"+String(number).replace(/\\D/g,"");
+    if(number) a.href="tel:+"+String(number).replace(/\D/g,"");
   });
   document.querySelectorAll(".contact-card").forEach(card=>{
     const label=card.querySelector("strong")?.textContent||"";
     const span=card.querySelector("span"); if(!span) return;
-    if(label.includes("WhatsApp")) span.textContent="+91 "+String(HOSPITAL_CONTACT.appointment_number||"").replace(/(\\d{5})(\\d{5})/,"$1 $2");
-    if(label.includes("Hospital / Emergency")) span.textContent="+91 "+String(HOSPITAL_CONTACT.emergency_number||"").replace(/(\\d{5})(\\d{5})/,"$1 $2");
+    if(label.includes("WhatsApp")) span.textContent="+91 "+String(HOSPITAL_CONTACT.appointment_number||"").replace(/(\d{5})(\d{5})/,"$1 $2");
+    if(label.includes("Hospital / Emergency")) span.textContent="+91 "+String(HOSPITAL_CONTACT.emergency_number||"").replace(/(\d{5})(\d{5})/,"$1 $2");
   });
 }
 
