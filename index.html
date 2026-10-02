@@ -88,6 +88,7 @@ section h2{color:var(--primary);font-size:24px;margin:0 0 8px}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
 .card{background:var(--primary-light);border:1px solid #d9eded;padding:18px;border-radius:17px}
 .card h3{margin:0 0 5px;font-size:16px}.card p,.card div{margin:0;color:#4d666a;font-size:13px}
+.update-list{display:grid;gap:12px}.update-card{border:1px solid var(--border);border-radius:16px;padding:16px;background:#f9fcfc}.update-card h3{margin:0 0 5px;color:var(--primary);font-size:17px}.update-meta{font-size:12px;color:var(--muted);margin-bottom:8px}.update-body{font-size:14px;color:#405b60;white-space:pre-wrap}
 
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .photo{
@@ -483,6 +484,12 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
   </div><div class="notice">नोट: यह appointment request है। Final confirmation hospital/WhatsApp team द्वारा दी जाएगी.</div>
   <button class="submit" type="submit">📲 Send Appointment on WhatsApp</button></form>
 </section>
+<section id="updates">
+  <h2>📢 Hospital Updates | अस्पताल सूचना</h2>
+  <p class="section-intro">Hospital द्वारा publish की गई latest information यहाँ दिखाई जाएगी।</p>
+  <div class="update-list" id="hospitalUpdates"><div class="update-card"><p>Hospital updates loading…</p></div></div>
+</section>
+
 <section id="contact"><h2>📞 Contact Amna Memorial Hospital</h2><div class="contact">
   <div class="contact-card"><strong>📲 WhatsApp / Phone</strong><span>+91 80512 46461</span></div>
   <div class="contact-card"><strong>📞 Hospital / Emergency</strong><span>+91 82949 05389</span></div>
@@ -550,7 +557,8 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:30px 20px;mar
 const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X";
 const {createClient}=window.supabase; const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-const WHATSAPP="918051246461";
+let WHATSAPP="918051246461";
+let HOSPITAL_CONTACT={appointment_number:"8051246461",emergency_number:"8294905389",general_number:"8294905389"};
 const qrImage=document.getElementById("qrImage"),qrDownload=document.getElementById("qrDownload"),dateInput=document.getElementById("date"),topBtn=document.getElementById("top");
 function escHospital(v){return String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]||c));}
 function doctorImage(slug){return {"dr-abul-kalam":"dr-abul-kalam.jpeg","dr-prof-md-tarique":"dr-prof-md-tarique.jpeg","dr-prof-hena-farooqui":"dr-prof-hena-farooqui.jpeg"}[slug]||"hospital-logo.jpg";}
@@ -562,10 +570,56 @@ function renderDoctors(doctors,opd){
  const select=document.getElementById("doctor"); if(select)select.innerHTML='<option value="">Select Doctor / डॉक्टर चुनें</option>'+doctors.map(d=>'<option value="'+escHospital(d.name_hi)+'">'+escHospital(d.name_hi)+'</option>').join("")+'<option value="Any Available Doctor">Any Available Doctor</option>';
 }
 function renderServices(services){const grid=document.getElementById("serviceCards");if(!grid)return;grid.innerHTML=services.map(s=>{const link=s.page_slug?escHospital(s.page_slug)+".html":"#services";return '<div class="card"><h3>🏥 <a href="'+link+'">'+escHospital(s.title_hi||s.title_en||"Service")+'</a></h3><div>'+escHospital(s.title_en||"")+'</div>'+(s.short_description?'<p>'+escHospital(s.short_description)+'</p>':"")+(s.page_slug?'<div><a href="'+link+'">सेवा विवरण →</a></div>':"")+'</div>';}).join("")||'<div class="card"><p>Service information is temporarily unavailable.</p></div>';}
+async function loadPublicContact(){
+  const {data,error}=await sb.rpc("get_public_hospital_contact");
+  if(error || !data || !data.length) return;
+  HOSPITAL_CONTACT=data[0];
+  WHATSAPP=String(HOSPITAL_CONTACT.appointment_number||WHATSAPP).replace(/\\D/g,"");
+  document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a=>{
+    const url=new URL(a.href); url.pathname="/"+WHATSAPP; a.href=url.toString();
+  });
+  document.querySelectorAll('a[href^="tel:"]').forEach(a=>{
+    const isEmergency=a.classList.contains("emergency");
+    const number=isEmergency?HOSPITAL_CONTACT.emergency_number:HOSPITAL_CONTACT.general_number;
+    if(number) a.href="tel:+"+String(number).replace(/\\D/g,"");
+  });
+  document.querySelectorAll(".contact-card").forEach(card=>{
+    const label=card.querySelector("strong")?.textContent||"";
+    const span=card.querySelector("span"); if(!span) return;
+    if(label.includes("WhatsApp")) span.textContent="+91 "+String(HOSPITAL_CONTACT.appointment_number||"").replace(/(\\d{5})(\\d{5})/,"$1 $2");
+    if(label.includes("Hospital / Emergency")) span.textContent="+91 "+String(HOSPITAL_CONTACT.emergency_number||"").replace(/(\\d{5})(\\d{5})/,"$1 $2");
+  });
+}
+
+function renderHospitalUpdates(rows){
+  const box=document.getElementById("hospitalUpdates"); if(!box)return;
+  if(!rows.length){box.innerHTML='<div class="update-card"><p>अभी कोई published hospital update उपलब्ध नहीं है।</p></div>';return;}
+  box.innerHTML=rows.map(r=>{
+    const title=escHospital(r.title_hi||r.title_en||"Hospital Update");
+    const body=escHospital(r.body_hi||r.body_en||"");
+    const date=r.publish_date?new Date(r.publish_date+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"2-digit",year:"numeric"}):"";
+    return '<article class="update-card"><h3>📢 '+title+'</h3>'+(date?'<div class="update-meta">📅 '+date+'</div>':"")+(body?'<div class="update-body">'+body+'</div>':"")+'</article>';
+  }).join("");
+}
+
+async function loadHospitalUpdates(){
+  const {data,error}=await sb.from("hospital_updates").select("id,title_hi,title_en,body_hi,body_en,publish_date").eq("is_published",true).order("publish_date",{ascending:false}).order("id",{ascending:false}).limit(10);
+  if(!error) renderHospitalUpdates(data||[]);
+}
+
 async function loadHospitalData(){
   const indiaTodayParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
   const indiaTodayObj={};indiaTodayParts.forEach(p=>indiaTodayObj[p.type]=p.value);
-  const indiaTodayStr=`${indiaTodayObj.year}-${indiaTodayObj.month}-${indiaTodayObj.day}`;const [dRes,sRes,oRes]=await Promise.all([sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),sb.from("opd_schedule").select("*").eq("is_published",true).eq("schedule_date",indiaTodayStr).limit(100)]);if(!dRes.error)renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));if(!sRes.error)renderServices(sRes.data||[]);}
+  const indiaTodayStr=indiaTodayObj.year+"-"+indiaTodayObj.month+"-"+indiaTodayObj.day;
+  const [dRes,sRes,oRes]=await Promise.all([
+    sb.from("doctors").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),
+    sb.from("services").select("*").eq("is_active",true).eq("is_published",true).order("sort_order"),
+    sb.from("opd_schedule").select("*").eq("is_published",true).eq("schedule_date",indiaTodayStr).limit(100)
+  ]);
+  if(!dRes.error)renderDoctors(dRes.data||[],oRes.error?[]:(oRes.data||[]));
+  if(!sRes.error)renderServices(sRes.data||[]);
+  await Promise.all([loadPublicContact(),loadHospitalUpdates()]);
+}
 function setQR(url){const src="https://api.qrserver.com/v1/create-qr-code/?size=700x700&margin=12&data="+encodeURIComponent(url);qrImage.src=src;qrDownload.href=src;} setQR(window.location.href);
 const nowParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());const nowObj={};nowParts.forEach(p=>nowObj[p.type]=p.value);dateInput.min=`${nowObj.year}-${nowObj.month}-${nowObj.day}`;
 document.getElementById("appointmentForm").addEventListener("submit",function(e){e.preventDefault();const name=document.getElementById("name").value.trim(),mobile=document.getElementById("mobile").value.trim(),age=document.getElementById("age").value.trim(),gender=document.getElementById("gender").value,patientType=document.getElementById("patientType").value,doctor=document.getElementById("doctor").value,date=document.getElementById("date").value,time=document.getElementById("time").value,problem=document.getElementById("problem").value.trim();if(!name){alert("Please enter the patient's name.");return}if(!/^[0-9]{10}$/.test(mobile)){alert("Please enter a valid 10-digit mobile number.");return}if(!date){alert("Please select a preferred date.");return}const message=`*New Appointment Request*
