@@ -118,5 +118,35 @@ footer{background:var(--dark);color:#fff;text-align:center;padding:28px 20px;mar
   <div>Care For Life | Your Health, Our Priority ❤️</div>
   <div style="margin-top:8px"><a href="index.html">Home</a> · <a href="contact.html">Contact &amp; Location</a> · <a href="index.html#appointment">Appointment</a></div>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function syncPublicContact(){
+  try{
+    const {createClient}=window.supabase;
+    const sb=createClient("https://yqyshtflpihufnolupgw.supabase.co","sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X");
+    const {data,error}=await sb.rpc("get_public_hospital_contact");
+    if(error||!data?.length)return;
+    const c=data[0];
+    const wa=String(c.appointment_number||"").replace(/\D/g,"");
+    const emergency=String(c.emergency_number||c.general_number||"").replace(/\D/g,"");
+    const general=String(c.general_number||c.emergency_number||"").replace(/\D/g,"");
+    document.querySelectorAll('a[href^="https://wa.me/"]').forEach(a=>{
+      if(wa){const u=new URL(a.href);u.pathname="/"+wa;a.href=u.toString();}
+    });
+    document.querySelectorAll('a[href^="tel:"]').forEach(a=>{
+      const text=(a.textContent||"").toLowerCase();
+      const n=text.includes("emergency")?emergency:general;
+      if(n)a.href="tel:+"+n;
+    });
+    document.querySelectorAll(".card").forEach(card=>{
+      const label=card.querySelector("strong")?.textContent||"";
+      const p=card.querySelector("p");
+      if(!p)return;
+      if(label.includes("Hospital Phone")||label.includes("Emergency"))p.textContent="+91 "+general.replace(/(\d{5})(\d{5})/,"$1 $2");
+      if(label.includes("WhatsApp Appointment"))p.textContent="+91 "+wa.replace(/(\d{5})(\d{5})/,"$1 $2");
+    });
+  }catch(e){console.warn("Public contact sync unavailable",e);}
+})();
+</script>
 </body>
 </html>
