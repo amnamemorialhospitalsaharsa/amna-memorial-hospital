@@ -54,7 +54,7 @@ footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
 <div class="card"><h2>🧠 Personal Memory</h2><p class="hint">महत्वपूर्ण बातें, पसंद और निजी नोट्स इस मोबाइल में सेव करें। अभी cloud sync चालू नहीं है।</p><form class="composer" id="memoryForm"><input class="field" id="memoryInput" maxlength="500" placeholder="याद रखने वाली बात लिखें…" required><button class="send" type="submit">सेव</button></form><div id="memoryList" style="margin-top:12px"></div></div>
 <div class="card"><h2>⏰ Daily Reminder</h2><p class="hint">समय पर सूचना पाने के लिए Notification अनुमति दें। ऐप बंद रहने पर सामान्य browser reminder की गारंटी नहीं होती।</p><button class="smallbtn" id="enableNotifications" type="button">🔔 Notifications चालू करें</button><div id="notifyStatus" class="hint" style="margin-top:8px">Notification अनुमति जाँची नहीं गई है।</div><form id="reminderForm" style="display:grid;gap:8px;margin-top:10px"><input class="field" id="reminderText" maxlength="180" placeholder="Reminder का नाम…" required><input class="field" id="reminderDate" type="datetime-local" required><button class="send" type="submit" style="padding:12px">Reminder जोड़ें</button></form><div id="reminderList" style="margin-top:12px"></div></div>
 <div class="card"><h2>📝 मेरी To-do List</h2><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
-<div class="card"><h2>🎙️ Voice सुविधाएँ</h2><p class="hint">Android Chrome में voice input उपलब्ध होने पर माइक से बोल सकते हैं।</p><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button></div>
+<div class="card"><h2>🎙️ JARVIS Voice Studio</h2><p class="hint">अपने मोबाइल में उपलब्ध Hindi या English आवाज़ चुनें। बेहतर उच्चारण के लिए गति भी नियंत्रित कर सकते हैं।</p><label class="hint" for="voiceSelect">आवाज़ चुनें</label><select class="field" id="voiceSelect"><option value="">Automatic best voice</option></select><label class="hint" for="speechRate" style="display:block;margin-top:10px">बोलने की गति: <span id="speechRateLabel">0.90×</span></label><input id="speechRate" type="range" min="0.75" max="1.10" step="0.05" value="0.90" style="width:100%;accent-color:#52d8ed"><div class="actions"><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button><button class="smallbtn" id="refreshVoices" type="button">↻ Voices Refresh</button></div><div id="voiceInfo" class="hint" style="margin-top:8px">आपके मोबाइल की उपलब्ध आवाज़ें लोड हो रही हैं…</div></div>
 </section>
 <footer>AMNA MEMORIAL HOSPITAL • SAHARSA</footer>
 </main>
@@ -65,17 +65,39 @@ const SUPABASE_ANON_JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const $=id=>document.getElementById(id);
 function setStatus(s){$("statusText").textContent=s}
 let voiceLanguage="hi-IN";
+let availableVoices=[];
+function bestVoice(){
+ const chosen=$("voiceSelect")?.value||"";
+ if(chosen){const exact=availableVoices.find(v=>v.voiceURI===chosen);if(exact)return exact}
+ const lang=voiceLanguage.toLowerCase();
+ const matches=availableVoices.filter(v=>v.lang.toLowerCase()===lang||v.lang.toLowerCase().startsWith(lang.slice(0,2)));
+ const preferred=matches.find(v=>/google|natural|neural|enhanced|microsoft/i.test(v.name))||matches.find(v=>v.lang.toLowerCase()===lang)||matches[0];
+ return preferred||null;
+}
+function refreshVoiceOptions(){
+ if(!("speechSynthesis" in window))return;
+ availableVoices=window.speechSynthesis.getVoices()||[];
+ const select=$("voiceSelect");if(!select)return;
+ const prior=select.value;select.textContent="";
+ const auto=document.createElement("option");auto.value="";auto.textContent="Automatic best voice";select.append(auto);
+ const relevant=availableVoices.filter(v=>v.lang.toLowerCase().startsWith(voiceLanguage.slice(0,2)));
+ relevant.forEach(v=>{const option=document.createElement("option");option.value=v.voiceURI;option.textContent=v.name+" ("+v.lang+")";select.append(option)});
+ if(relevant.some(v=>v.voiceURI===prior))select.value=prior;
+ const selected=bestVoice();
+ $("voiceInfo").textContent=selected?"Selected: "+selected.name+" · "+selected.lang:(voiceLanguage==="hi-IN"?"इस मोबाइल में Hindi voice नहीं मिली। Android में Hindi Text-to-Speech voice install करें।":"इस भाषा की voice नहीं मिली; browser default voice उपयोग होगी।");
+}
 function speak(text){
  if(!("speechSynthesis" in window)){$("voiceCaption").textContent="इस browser में आवाज़ में जवाब उपलब्ध नहीं है।";return}
  window.speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(String(text).slice(0,3500));
- u.lang=voiceLanguage;u.rate=voiceLanguage==="hi-IN"?0.92:0.98;
- const voices=window.speechSynthesis.getVoices();
- const preferred=voices.find(v=>v.lang.toLowerCase()===voiceLanguage.toLowerCase())||voices.find(v=>v.lang.toLowerCase().startsWith(voiceLanguage.slice(0,2)));
- if(preferred)u.voice=preferred;
+ const clean=String(text).replace(/\r/g,"").replace(/[•●]/g,", ").replace(/\n{2,}/g,". ").replace(/\n/g,", ").trim().slice(0,3500);
+ const u=new SpeechSynthesisUtterance(clean);
+ u.lang=voiceLanguage;
+ u.rate=Number($("speechRate")?.value||0.90);
+ u.pitch=1.02;
+ const voice=bestVoice();if(voice)u.voice=voice;
  u.onstart=()=>setStatus("JARVIS जवाब दे रहा है…");
  u.onend=()=>setStatus("मोबाइल असिस्टेंट तैयार");
- u.onerror=()=>setStatus("मोबाइल असिस्टेंट तैयार");
+ u.onerror=()=>setStatus("आवाज़ चलाने में समस्या—Voice settings जाँचें");
  window.speechSynthesis.speak(u);
 }
 try{if(window.speechSynthesis&&typeof window.speechSynthesis.getVoices==="function")window.speechSynthesis.getVoices()}catch(e){console.warn("Voice list unavailable:",e)}
@@ -105,6 +127,7 @@ function setVoiceLanguage(lang){
  $("langHi").setAttribute("aria-pressed",String(lang==="hi-IN"));
  $("langEn").setAttribute("aria-pressed",String(lang==="en-IN"));
  $("voiceCaption").textContent=lang==="hi-IN"?"हिंदी में बोलने के लिए माइक दबाएँ":"Press the mic and speak in English";
+ refreshVoiceOptions();
 }
 // Bind controls defensively; delegated handlers remain available if direct binding fails.
 function stopJarvisSpeech(){
@@ -140,7 +163,11 @@ $("voiceBtn").addEventListener("click",()=>{
  };
  try{rec.start()}catch(e){activeRecognition=null;$("voiceBtn").classList.remove("listening");$("voiceCaption").textContent="माइक दोबारा दबाकर प्रयास करें।"}
 });
-$("testVoice").addEventListener("click",()=>speak("नमस्ते, मैं AMNA JARVIS हूँ। आपकी सहायता के लिए तैयार हूँ।"));
+$("voiceSelect").addEventListener("change",()=>{if(window.speechSynthesis)window.speechSynthesis.cancel();refreshVoiceOptions()});
+$("speechRate").addEventListener("input",()=>{$("speechRateLabel").textContent=Number($("speechRate").value).toFixed(2)+"×"});
+$("refreshVoices").addEventListener("click",refreshVoiceOptions);
+if("speechSynthesis" in window){refreshVoiceOptions();window.speechSynthesis.onvoiceschanged=refreshVoiceOptions;setTimeout(refreshVoiceOptions,800)}
+$("testVoice").addEventListener("click",()=>speak(voiceLanguage==="hi-IN"?"नमस्ते! मैं आमना जार्विस हूँ। मैं आपकी सहायता के लिए तैयार हूँ। कृपया अपना सवाल बताइए।":"Hello! I am AMNA JARVIS. I am ready to help you."));
 // Capture-phase diagnostics make JavaScript errors visible in the app instead of silently disabling controls.
 window.addEventListener("error",e=>{
  const caption=$("voiceCaption");
