@@ -127,7 +127,7 @@ $("voiceBtn").addEventListener("click",()=>{
   $("voiceCaption").textContent=finalText?("आपने कहा: "+finalText):(interim||"सुन रहा हूँ…");
  };
  rec.onerror=e=>{
-  const messages={not-allowed:"Microphone permission दें और फिर प्रयास करें।",no-speech:"आवाज़ नहीं मिली। माइक दबाकर फिर बोलें।",network:"Voice recognition के लिए इंटरनेट कनेक्शन जाँचें।", "audio-capture":"माइक्रोफोन उपलब्ध नहीं है।"};
+  const messages={"not-allowed":"Microphone permission दें और फिर प्रयास करें।","no-speech":"आवाज़ नहीं मिली। माइक दबाकर फिर बोलें।","network":"Voice recognition के लिए इंटरनेट कनेक्शन जाँचें।","audio-capture":"माइक्रोफोन उपलब्ध नहीं है।"};
   $("voiceCaption").textContent=messages[e.error]||"आवाज़ पहचानने में समस्या हुई। दोबारा प्रयास करें।";
   setStatus("मोबाइल असिस्टेंट तैयार");
  };
