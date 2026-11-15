@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "AMNA JARVIS",
+  "short_name": "AMNA JARVIS",
+  "description": "Personal and hospital AI assistant for Amna Memorial Hospital",
+  "lang": "hi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071522",
+  "theme_color": "#071a2d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
