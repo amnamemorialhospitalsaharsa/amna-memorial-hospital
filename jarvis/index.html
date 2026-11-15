@@ -51,8 +51,10 @@ footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
 <p class="notice">यह जानकारी देने वाला सहायक है, डॉक्टर का विकल्प नहीं। Emergency में सीधे अस्पताल से संपर्क करें। Patient की निजी medical जानकारी यहाँ दर्ज न करें।</p>
 </section>
 <section id="personalPanel" class="hidden">
-<div class="card"><h2>📝 मेरी Notes और To-do</h2><p class="hint">ये नोट्स अभी केवल इसी मोबाइल के browser में सेव होंगे। Cloud sync अभी चालू नहीं है।</p><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
-<div class="card"><h2>🎙️ Voice सुविधाएँ</h2><p class="hint">Android Chrome में voice input उपलब्ध होने पर माइक से बोल सकते हैं। जवाब सुनाने के लिए नीचे बटन दबाएँ।</p><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button></div>
+<div class="card"><h2>🧠 Personal Memory</h2><p class="hint">महत्वपूर्ण बातें, पसंद और निजी नोट्स इस मोबाइल में सेव करें। अभी cloud sync चालू नहीं है।</p><form class="composer" id="memoryForm"><input class="field" id="memoryInput" maxlength="500" placeholder="याद रखने वाली बात लिखें…" required><button class="send" type="submit">सेव</button></form><div id="memoryList" style="margin-top:12px"></div></div>
+<div class="card"><h2>⏰ Daily Reminder</h2><p class="hint">समय पर सूचना पाने के लिए Notification अनुमति दें। ऐप बंद रहने पर सामान्य browser reminder की गारंटी नहीं होती।</p><button class="smallbtn" id="enableNotifications" type="button">🔔 Notifications चालू करें</button><div id="notifyStatus" class="hint" style="margin-top:8px">Notification अनुमति जाँची नहीं गई है।</div><form id="reminderForm" style="display:grid;gap:8px;margin-top:10px"><input class="field" id="reminderText" maxlength="180" placeholder="Reminder का नाम…" required><input class="field" id="reminderDate" type="datetime-local" required><button class="send" type="submit" style="padding:12px">Reminder जोड़ें</button></form><div id="reminderList" style="margin-top:12px"></div></div>
+<div class="card"><h2>📝 मेरी To-do List</h2><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
+<div class="card"><h2>🎙️ Voice सुविधाएँ</h2><p class="hint">Android Chrome में voice input उपलब्ध होने पर माइक से बोल सकते हैं।</p><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button></div>
 </section>
 <footer>AMNA MEMORIAL HOSPITAL • SAHARSA</footer>
 </main>
@@ -154,6 +156,48 @@ function renderTodos(){const root=$("todoList");root.textContent="";const items=
 $("todoForm").addEventListener("submit",e=>{e.preventDefault();const t=$("todoInput").value.trim();if(!t)return;const a=getTodos();a.unshift({text:t,done:false});saveTodos(a);$("todoInput").value=""});
 $("clearDone").onclick=()=>saveTodos(getTodos().filter(x=>!x.done));
 renderTodos();
-if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(console.warn);
+
+// V5: local-first personal memory and reminders.
+function readStore(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return []}}
+function writeStore(key,value){localStorage.setItem(key,JSON.stringify(value))}
+function renderMemory(){
+ const root=$("memoryList");root.textContent="";const items=readStore("amna_jarvis_memory");
+ if(!items.length){root.textContent="अभी कोई Memory सेव नहीं है।";return}
+ items.forEach((item,i)=>{const row=document.createElement("div");row.className="todo";const label=document.createElement("span");label.textContent=item.text;const del=document.createElement("button");del.className="smallbtn";del.textContent="हटाएँ";del.onclick=()=>{const a=readStore("amna_jarvis_memory");a.splice(i,1);writeStore("amna_jarvis_memory",a);renderMemory()};row.append(label,del);root.append(row)});
+}
+$("memoryForm").addEventListener("submit",e=>{e.preventDefault();const value=$("memoryInput").value.trim();if(!value)return;const a=readStore("amna_jarvis_memory");a.unshift({text:value,createdAt:new Date().toISOString()});writeStore("amna_jarvis_memory",a);$("memoryInput").value="";renderMemory()});
+function renderReminders(){
+ const root=$("reminderList");root.textContent="";const items=readStore("amna_jarvis_reminders");
+ if(!items.length){root.textContent="अभी कोई Reminder नहीं है।";return}
+ items.sort((a,b)=>a.when-b.when).forEach(item=>{const row=document.createElement("div");row.className="todo";const label=document.createElement("span");label.textContent=item.text+" — "+new Date(item.when).toLocaleString("hi-IN");const del=document.createElement("button");del.className="smallbtn";del.textContent="हटाएँ";del.onclick=()=>{writeStore("amna_jarvis_reminders",readStore("amna_jarvis_reminders").filter(x=>x.id!==item.id));renderReminders()};row.append(label,del);root.append(row)});
+}
+async function enableJarvisNotifications(){
+ if(!("Notification" in window)){$("notifyStatus").textContent="इस browser में Notification उपलब्ध नहीं है।";return}
+ const permission=await Notification.requestPermission();
+ $("notifyStatus").textContent=permission==="granted"?"✅ Notification अनुमति मिल गई।":"Notification अनुमति नहीं मिली। Browser settings में अनुमति दें।";
+}
+$("enableNotifications").addEventListener("click",enableJarvisNotifications);
+$("reminderForm").addEventListener("submit",e=>{
+ e.preventDefault();const textValue=$("reminderText").value.trim();const when=new Date($("reminderDate").value).getTime();
+ if(!textValue||!Number.isFinite(when)||when<=Date.now()){ $("notifyStatus").textContent="कृपया भविष्य का सही समय चुनें।";return}
+ const a=readStore("amna_jarvis_reminders");a.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2),text:textValue,when,notified:false});writeStore("amna_jarvis_reminders",a);
+ $("reminderText").value="";$("reminderDate").value="";renderReminders();checkJarvisReminders();
+});
+function checkJarvisReminders(){
+ const items=readStore("amna_jarvis_reminders");let changed=false;
+ for(const item of items){
+  if(!item.notified&&item.when<=Date.now()){
+   if("Notification" in window&&Notification.permission==="granted"){
+    const title="AMNA JARVIS Reminder";const options={body:item.text,icon:"./icon.svg",tag:"amna-"+item.id};
+    if("serviceWorker" in navigator)navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,options)).catch(()=>new Notification(title,options.body));
+    else new Notification(title,options);
+   }
+   item.notified=true;changed=true;
+  }
+ }
+ if(changed)writeStore("amna_jarvis_reminders",items);
+}
+renderMemory();renderReminders();checkJarvisReminders();setInterval(checkJarvisReminders,15000);
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").then(()=>checkJarvisReminders()).catch(console.warn);
 </script>
 </body></html>
