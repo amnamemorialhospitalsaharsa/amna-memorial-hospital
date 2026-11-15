@@ -59,7 +59,7 @@ footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
 <script>
 const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X";
-const SUPABASE_ANON_JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ5cXlzaHRmbHBpaHVm bm9sdXBndyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzg5NzkyNjI0LCJleHAiOjIxMDUzNjg2MjR9.QCK4caW0pND0xpg1104u20EL8W1pmj-YMPFRrGMGzEU".replaceAll(" ","");
+const SUPABASE_ANON_JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxeXNodGZscGlodWZub2x1cGd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTI2MjQsImV4cCI6MjEwNTM2ODYyNH0.QCK4caW0pND0xpg1104u20EL8W1pmj-YMPFRrGMGzEU";
 const $=id=>document.getElementById(id);
 function setStatus(s){$("statusText").textContent=s}
 function speak(text){if(!("speechSynthesis" in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="hi-IN";u.rate=1;window.speechSynthesis.speak(u)}
