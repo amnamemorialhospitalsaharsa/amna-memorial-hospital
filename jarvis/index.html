@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071a2d">
+<meta name="description" content="AMNA JARVIS personal and hospital assistant">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>AMNA JARVIS</title>
+<style>
+:root{color-scheme:dark;--bg:#071522;--panel:#10283a;--panel2:#15364b;--cyan:#52d8ed;--text:#eaf7fb;--muted:#9cb8c7;--line:#24475c;--green:#4bd19b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#17415a 0,#071522 52%);color:var(--text);font:16px system-ui,-apple-system,"Noto Sans Devanagari",sans-serif;min-height:100vh}
+header{padding:calc(18px + env(safe-area-inset-top)) 18px 12px;text-align:center}
+.logo{width:62px;height:62px;border:1px solid #4fd6e855;border-radius:22px;display:grid;place-items:center;margin:0 auto 9px;background:#0f2c40;box-shadow:0 0 32px #39c9e522}
+.logo span{font-size:29px;color:var(--cyan);font-weight:800}
+h1{font-size:24px;letter-spacing:2px;margin:0}.sub{font-size:11px;letter-spacing:2px;color:var(--muted);margin-top:4px}
+main{max-width:680px;margin:auto;padding:12px 14px 34px}
+.status{display:flex;justify-content:center;align-items:center;gap:7px;color:var(--green);font-size:12px;margin:4px 0 16px}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.tab{border:1px solid var(--line);background:#0c2030;color:var(--muted);padding:12px;border-radius:13px;font-weight:700}.tab.active{background:#124057;color:var(--cyan);border-color:#3cc4dd}
+.card{background:#0d2232;border:1px solid var(--line);border-radius:19px;padding:15px;margin:10px 0;box-shadow:0 12px 30px #0002}
+h2{font-size:16px;margin:0 0 7px}.hint{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 12px}
+.orb-wrap{display:grid;place-items:center;padding:12px 0 18px}.orb{width:112px;height:112px;border-radius:50%;border:1px solid #5de4f0;background:radial-gradient(circle at 50% 45%,#246b82,#0a263a 70%);box-shadow:0 0 0 9px #49d5e80c,0 0 38px #35cce944;display:grid;place-items:center;color:#a9f6ff;font-size:35px}.orb.listening{animation:pulse 1.2s infinite}@keyframes pulse{50%{box-shadow:0 0 0 18px #49d5e80b,0 0 52px #35cce988}}
+.orb-caption{font-size:12px;color:var(--muted);margin-top:12px}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.quick button,.action{background:#143449;border:1px solid #28536a;color:var(--text);padding:11px;border-radius:12px;text-align:left;font-size:13px}
+.messages{display:flex;flex-direction:column;gap:9px;max-height:38vh;overflow:auto;padding:3px 0 10px}.msg{max-width:92%;padding:11px 12px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.bot{background:#15364b;align-self:flex-start}.user{background:#07566a;align-self:flex-end}
+.composer{display:flex;gap:8px}.composer input,.field{min-width:0;width:100%;background:#071a29;border:1px solid var(--line);border-radius:12px;padding:13px;color:var(--text);font:inherit}.send,.mic{border:0;border-radius:12px;background:#087c91;color:white;padding:0 16px;font-weight:800}.mic{background:#17465b;font-size:18px;min-width:48px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.smallbtn{border:1px solid var(--line);background:#132f43;color:var(--cyan);border-radius:10px;padding:9px 12px}
+.hidden{display:none!important}.todo{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.todo:last-child{border:0}.todo span{flex:1;overflow-wrap:anywhere}.todo.done span{text-decoration:line-through;color:var(--muted)}
+.notice{font-size:11px;color:#a8c0cd;line-height:1.5;margin:13px 3px 0;text-align:center}
+footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
+@media(min-width:560px){main{padding-top:18px}.orb{width:128px;height:128px}}
+</style>
+</head>
+<body>
+<header><div class="logo"><span>A</span></div><h1>AMNA JARVIS</h1><div class="sub">PERSONAL • HOSPITAL AI ASSISTANT</div></header>
+<main>
+<div class="status"><span class="dot"></span><span id="statusText">मोबाइल असिस्टेंट तैयार</span></div>
+<div class="tabs"><button class="tab active" id="hospitalTab">🏥 Hospital</button><button class="tab" id="personalTab">👤 Personal</button></div>
+<section id="hospitalPanel">
+<div class="card">
+<div class="orb-wrap"><button class="orb" id="voiceBtn" aria-label="बोलकर पूछें">⌁</button><div class="orb-caption" id="voiceCaption">बोलने के लिए माइक दबाएँ</div></div>
+<div class="quick">
+<button class="action" data-q="आज का OPD schedule बताइए">📅 आज का OPD</button>
+<button class="action" data-q="आज कौन डॉक्टर उपलब्ध हैं?">👨‍⚕️ डॉक्टर उपलब्धता</button>
+<button class="action" data-q="Hospital की services बताइए">🏥 Hospital Services</button>
+<button class="action" data-q="Hospital का पता और संपर्क बताइए">📍 पता और संपर्क</button>
+</div>
+</div>
+<div class="card"><h2>JARVIS से पूछें</h2><p class="hint">Hospital से संबंधित सवाल हिंदी या अंग्रेजी में लिखें या बोलें।</p><div class="messages" id="messages"><div class="msg bot">नमस्ते! मैं AMNA JARVIS हूँ। Hospital की प्रकाशित जानकारी, डॉक्टर और OPD से जुड़े सवाल पूछ सकते हैं।</div></div><form class="composer" id="chatForm"><input id="question" maxlength="1000" placeholder="अपना सवाल लिखें…" autocomplete="off" required><button class="send" type="submit">भेजें</button></form></div>
+<p class="notice">यह जानकारी देने वाला सहायक है, डॉक्टर का विकल्प नहीं। Emergency में सीधे अस्पताल से संपर्क करें। Patient की निजी medical जानकारी यहाँ दर्ज न करें।</p>
+</section>
+<section id="personalPanel" class="hidden">
+<div class="card"><h2>📝 मेरी Notes और To-do</h2><p class="hint">ये नोट्स अभी केवल इसी मोबाइल के browser में सेव होंगे। Cloud sync अभी चालू नहीं है।</p><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
+<div class="card"><h2>🎙️ Voice सुविधाएँ</h2><p class="hint">Android Chrome में voice input उपलब्ध होने पर माइक से बोल सकते हैं। जवाब सुनाने के लिए नीचे बटन दबाएँ।</p><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button></div>
+</section>
+<footer>AMNA MEMORIAL HOSPITAL • SAHARSA</footer>
+</main>
+<script>
+const SUPABASE_URL="https://yqyshtflpihufnolupgw.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_1DDjigk2MOMc1wZEB6FSBQ_WwulJe9X";
+const SUPABASE_ANON_JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ5cXlzaHRmbHBpaHVm bm9sdXBndyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzg5NzkyNjI0LCJleHAiOjIxMDUzNjg2MjR9.QCK4caW0pND0xpg1104u20EL8W1pmj-YMPFRrGMGzEU".replaceAll(" ","");
+const $=id=>document.getElementById(id);
+function setStatus(s){$("statusText").textContent=s}
+function speak(text){if(!("speechSynthesis" in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="hi-IN";u.rate=1;window.speechSynthesis.speak(u)}
+function addMessage(text,who){const el=document.createElement("div");el.className="msg "+who;el.textContent=text;$("messages").appendChild(el);$("messages").scrollTop=$("messages").scrollHeight;return el}
+async function askHospital(message){
+ const res=await fetch(SUPABASE_URL+"/functions/v1/hospital-ai",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":"Bearer "+SUPABASE_ANON_JWT},body:JSON.stringify({message})});
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok)throw new Error(data.error||"AI service request failed");
+ return data.answer||"अभी जवाब उपलब्ध नहीं है।";
+}
+async function sendQuestion(message){
+ const q=String(message||"").trim();if(!q)return;
+ addMessage(q,"user");$("question").value="";$("question").disabled=true;
+ const pending=addMessage("जानकारी देखी जा रही है…","bot");setStatus("Hospital जानकारी देख रहा हूँ…");
+ try{const answer=await askHospital(q);pending.textContent=answer;speak(answer)}
+ catch(e){pending.textContent="अभी Hospital AI से संपर्क नहीं हो सका। कृपया कुछ देर बाद प्रयास करें।";console.error(e)}
+ finally{$("question").disabled=false;$("question").focus();setStatus("मोबाइल असिस्टेंट तैयार")}
+}
+$("chatForm").addEventListener("submit",e=>{e.preventDefault();sendQuestion($("question").value)});
+document.querySelectorAll("[data-q]").forEach(b=>b.addEventListener("click",()=>sendQuestion(b.dataset.q)));
+$("hospitalTab").onclick=()=>{ $("hospitalPanel").classList.remove("hidden");$("personalPanel").classList.add("hidden");$("hospitalTab").classList.add("active");$("personalTab").classList.remove("active")};
+$("personalTab").onclick=()=>{ $("personalPanel").classList.remove("hidden");$("hospitalPanel").classList.add("hidden");$("personalTab").classList.add("active");$("hospitalTab").classList.remove("active")};
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+$("voiceBtn").onclick=()=>{
+ if(!SpeechRecognition){$("voiceCaption").textContent="इस browser में voice input उपलब्ध नहीं है। Chrome में खोलें।";return}
+ const rec=new SpeechRecognition();rec.lang="hi-IN";rec.interimResults=false;rec.maxAlternatives=1;
+ $("voiceBtn").classList.add("listening");$("voiceCaption").textContent="सुन रहा हूँ…";setStatus("आपकी आवाज़ सुन रहा हूँ");
+ rec.onresult=e=>{const t=e.results[0][0].transcript;$("voiceCaption").textContent="आपने कहा: "+t;sendQuestion(t)};
+ rec.onerror=()=>{$("voiceCaption").textContent="आवाज़ समझ नहीं आई। दोबारा प्रयास करें।";setStatus("तैयार")};
+ rec.onend=()=>{$("voiceBtn").classList.remove("listening");if($("statusText").textContent==="आपकी आवाज़ सुन रहा हूँ")setStatus("तैयार")};
+ rec.start();
+};
+$("testVoice").onclick=()=>speak("नमस्ते, मैं AMNA JARVIS हूँ। आपकी सहायता के लिए तैयार हूँ।");
+function getTodos(){try{return JSON.parse(localStorage.getItem("amna_jarvis_todos")||"[]")}catch{return []}}
+function saveTodos(items){localStorage.setItem("amna_jarvis_todos",JSON.stringify(items));renderTodos()}
+function renderTodos(){const root=$("todoList");root.textContent="";const items=getTodos();if(!items.length){root.textContent="अभी कोई काम नहीं जोड़ा गया है।";root.style.color="#9cb8c7";return}items.forEach((item,i)=>{const row=document.createElement("div");row.className="todo"+(item.done?" done":"");const check=document.createElement("input");check.type="checkbox";check.checked=item.done;check.style.width="20px";check.onchange=()=>{const a=getTodos();a[i].done=check.checked;saveTodos(a)};const label=document.createElement("span");label.textContent=item.text;const del=document.createElement("button");del.className="smallbtn";del.textContent="हटाएँ";del.onclick=()=>{const a=getTodos();a.splice(i,1);saveTodos(a)};row.append(check,label,del);root.append(row)})}
+$("todoForm").addEventListener("submit",e=>{e.preventDefault();const t=$("todoInput").value.trim();if(!t)return;const a=getTodos();a.unshift({text:t,done:false});saveTodos(a);$("todoInput").value=""});
+$("clearDone").onclick=()=>saveTodos(getTodos().filter(x=>!x.done));
+renderTodos();
+if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(console.warn);
+</script>
+</body></html>
