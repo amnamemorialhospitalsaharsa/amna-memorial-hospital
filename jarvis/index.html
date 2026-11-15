@@ -76,7 +76,7 @@ function speak(text){
  u.onerror=()=>setStatus("मोबाइल असिस्टेंट तैयार");
  window.speechSynthesis.speak(u);
 }
-if("speechSynthesis" in window)window.speechSynthesis.getVoices();
+try{if(window.speechSynthesis&&typeof window.speechSynthesis.getVoices==="function")window.speechSynthesis.getVoices()}catch(e){console.warn("Voice list unavailable:",e)}
 function addMessage(text,who){const el=document.createElement("div");el.className="msg "+who;el.textContent=text;$("messages").appendChild(el);$("messages").scrollTop=$("messages").scrollHeight;return el}
 async function askHospital(message){
  const res=await fetch(SUPABASE_URL+"/functions/v1/hospital-ai",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":"Bearer "+SUPABASE_ANON_JWT},body:JSON.stringify({message})});
@@ -104,10 +104,15 @@ function setVoiceLanguage(lang){
  $("langEn").setAttribute("aria-pressed",String(lang==="en-IN"));
  $("voiceCaption").textContent=lang==="hi-IN"?"हिंदी में बोलने के लिए माइक दबाएँ":"Press the mic and speak in English";
 }
-$("langHi").onclick=()=>setVoiceLanguage("hi-IN");
-$("langEn").onclick=()=>setVoiceLanguage("en-IN");
-$("stopSpeak").onclick=()=>{if("speechSynthesis" in window)window.speechSynthesis.cancel();setStatus("मोबाइल असिस्टेंट तैयार")};
-$("voiceBtn").onclick=()=>{
+// Bind controls defensively; delegated handlers remain available if direct binding fails.
+function stopJarvisSpeech(){
+ try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(e){console.warn("Speech stop:",e)}
+ setStatus("मोबाइल असिस्टेंट तैयार");
+}
+$("langHi").addEventListener("click",()=>setVoiceLanguage("hi-IN"));
+$("langEn").addEventListener("click",()=>setVoiceLanguage("en-IN"));
+$("stopSpeak").addEventListener("click",stopJarvisSpeech);
+$("voiceBtn").addEventListener("click",()=>{
  if(!SpeechRecognition){$("voiceCaption").textContent="Voice input के लिए Android Chrome का उपयोग करें।";return}
  if(activeRecognition){activeRecognition.stop();return}
  const rec=new SpeechRecognition();activeRecognition=rec;rec.lang=voiceLanguage;rec.interimResults=true;rec.maxAlternatives=1;rec.continuous=false;
@@ -132,8 +137,17 @@ $("voiceBtn").onclick=()=>{
   else if($("statusText").textContent==="आपकी आवाज़ सुन रहा हूँ")setStatus("मोबाइल असिस्टेंट तैयार");
  };
  try{rec.start()}catch(e){activeRecognition=null;$("voiceBtn").classList.remove("listening");$("voiceCaption").textContent="माइक दोबारा दबाकर प्रयास करें।"}
-};
-$("testVoice").onclick=()=>speak("नमस्ते, मैं AMNA JARVIS हूँ। आपकी सहायता के लिए तैयार हूँ।");
+});
+$("testVoice").addEventListener("click",()=>speak("नमस्ते, मैं AMNA JARVIS हूँ। आपकी सहायता के लिए तैयार हूँ।"));
+// Capture-phase diagnostics make JavaScript errors visible in the app instead of silently disabling controls.
+window.addEventListener("error",e=>{
+ const caption=$("voiceCaption");
+ if(caption)caption.textContent="JARVIS में तकनीकी त्रुटि हुई। पेज Refresh करें।";
+ console.error("AMNA JARVIS runtime error:",e.message,e.filename,e.lineno);
+});
+window.addEventListener("unhandledrejection",e=>{
+ console.error("AMNA JARVIS async error:",e.reason);
+});
 function getTodos(){try{return JSON.parse(localStorage.getItem("amna_jarvis_todos")||"[]")}catch{return []}}
 function saveTodos(items){localStorage.setItem("amna_jarvis_todos",JSON.stringify(items));renderTodos()}
 function renderTodos(){const root=$("todoList");root.textContent="";const items=getTodos();if(!items.length){root.textContent="अभी कोई काम नहीं जोड़ा गया है।";root.style.color="#9cb8c7";return}items.forEach((item,i)=>{const row=document.createElement("div");row.className="todo"+(item.done?" done":"");const check=document.createElement("input");check.type="checkbox";check.checked=item.done;check.style.width="20px";check.onchange=()=>{const a=getTodos();a[i].done=check.checked;saveTodos(a)};const label=document.createElement("span");label.textContent=item.text;const del=document.createElement("button");del.className="smallbtn";del.textContent="हटाएँ";del.onclick=()=>{const a=getTodos();a.splice(i,1);saveTodos(a)};row.append(check,label,del);root.append(row)})}
