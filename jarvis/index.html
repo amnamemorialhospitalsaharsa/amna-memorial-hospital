@@ -74,7 +74,7 @@ footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
 <div class="card"><h2>🧠 Personal Memory</h2><p class="hint">महत्वपूर्ण बातें, पसंद और निजी नोट्स इस मोबाइल में सेव करें। अभी cloud sync चालू नहीं है।</p><form class="composer" id="memoryForm"><input class="field" id="memoryInput" maxlength="500" placeholder="याद रखने वाली बात लिखें…" required><button class="send" type="submit">सेव</button></form><div id="memoryList" style="margin-top:12px"></div></div>
 <div class="card"><h2>⏰ Daily Reminder</h2><p class="hint">समय पर सूचना पाने के लिए Notification अनुमति दें। ऐप बंद रहने पर सामान्य browser reminder की गारंटी नहीं होती।</p><button class="smallbtn" id="enableNotifications" type="button">🔔 Notifications चालू करें</button><div id="notifyStatus" class="hint" style="margin-top:8px">Notification अनुमति जाँची नहीं गई है।</div><form id="reminderForm" style="display:grid;gap:8px;margin-top:10px"><input class="field" id="reminderText" maxlength="180" placeholder="Reminder का नाम…" required><input class="field" id="reminderDate" type="datetime-local" required><button class="send" type="submit" style="padding:12px">Reminder जोड़ें</button></form><div id="reminderList" style="margin-top:12px"></div></div>
 <div class="card"><h2>📝 मेरी To-do List</h2><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
-<div class="card"><h2>🎙️ JARVIS Voice Studio</h2><p class="hint">अपने मोबाइल में उपलब्ध Hindi या English आवाज़ चुनें। बेहतर उच्चारण के लिए गति भी नियंत्रित कर सकते हैं।</p><label class="hint" for="voiceSelect">आवाज़ चुनें</label><select class="field" id="voiceSelect"><option value="">Automatic best voice</option></select><label class="hint" for="speechRate" style="display:block;margin-top:10px">बोलने की गति: <span id="speechRateLabel">0.90×</span></label><input id="speechRate" type="range" min="0.75" max="1.10" step="0.05" value="0.90" style="width:100%;accent-color:#52d8ed"><div class="actions"><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button><button class="smallbtn" id="refreshVoices" type="button">↻ Voices Refresh</button></div><div id="voiceInfo" class="hint" style="margin-top:8px">आपके मोबाइल की उपलब्ध आवाज़ें लोड हो रही हैं…</div></div>
+<div class="card"><h2>🎙️ JARVIS Voice Studio</h2><p class="hint">अपनी Hindi या English आवाज़ चुनें। आवाज़ और गति सेव रहेंगी; लंबे जवाब छोटे वाक्यों में पढ़े जाएँगे।</p><label class="hint" for="voiceSelect">आवाज़ चुनें</label><select class="field" id="voiceSelect"><option value="">Automatic best voice</option></select><label class="hint" for="speechRate" style="display:block;margin-top:10px">बोलने की गति: <span id="speechRateLabel">0.90×</span></label><input id="speechRate" type="range" min="0.75" max="1.10" step="0.05" value="0.90" style="width:100%;accent-color:#52d8ed"><div class="actions"><button class="smallbtn" id="testVoice" type="button">🔊 आवाज़ जाँचें</button><button class="smallbtn" id="refreshVoices" type="button">↻ Voices Refresh</button></div><div id="voiceInfo" class="hint" style="margin-top:8px">आपके मोबाइल की उपलब्ध आवाज़ें लोड हो रही हैं…</div></div>
 </section>
 <footer>AMNA MEMORIAL HOSPITAL • SAHARSA</footer>
 </main>
@@ -86,39 +86,119 @@ const $=id=>document.getElementById(id);
 function setStatus(s){$("statusText").textContent=s}
 let voiceLanguage="hi-IN";
 let availableVoices=[];
-function bestVoice(){
- const chosen=$("voiceSelect")?.value||"";
- if(chosen){const exact=availableVoices.find(v=>v.voiceURI===chosen);if(exact)return exact}
- const lang=voiceLanguage.toLowerCase();
+let speechQueue=[];
+let speechRunId=0;
+const VOICE_PREF_KEY="amna_jarvis_voice_preferences";
+function loadVoicePreferences(){
+ try{return JSON.parse(localStorage.getItem(VOICE_PREF_KEY)||"{}")}catch{return {}}
+}
+let voicePreferences=loadVoicePreferences();
+function saveVoicePreferences(){
+ try{
+  voicePreferences[voiceLanguage]={voiceURI:$("voiceSelect")?.value||"",rate:Number($("speechRate")?.value||0.90)};
+  localStorage.setItem(VOICE_PREF_KEY,JSON.stringify(voicePreferences));
+ }catch(e){console.warn("Voice preference save failed:",e)}
+}
+function bestVoice(language=voiceLanguage){
+ const pref=voicePreferences[language]||{};
+ const selectedURI=language===voiceLanguage?($("voiceSelect")?.value||pref.voiceURI||""):pref.voiceURI||"";
+ if(selectedURI){
+  const exact=availableVoices.find(v=>v.voiceURI===selectedURI&&v.lang.toLowerCase().startsWith(language.slice(0,2)));
+  if(exact)return exact;
+ }
+ const lang=language.toLowerCase();
  const matches=availableVoices.filter(v=>v.lang.toLowerCase()===lang||v.lang.toLowerCase().startsWith(lang.slice(0,2)));
- const preferred=matches.find(v=>/google|natural|neural|enhanced|microsoft/i.test(v.name))||matches.find(v=>v.lang.toLowerCase()===lang)||matches[0];
- return preferred||null;
+ return matches.find(v=>/google|natural|neural|enhanced|microsoft/i.test(v.name))||matches.find(v=>v.lang.toLowerCase()===lang)||matches[0]||null;
 }
 function refreshVoiceOptions(){
  if(!("speechSynthesis" in window))return;
  availableVoices=window.speechSynthesis.getVoices()||[];
  const select=$("voiceSelect");if(!select)return;
- const prior=select.value;select.textContent="";
+ const pref=voicePreferences[voiceLanguage]||{};
+ const prior=pref.voiceURI||select.value||"";
+ select.textContent="";
  const auto=document.createElement("option");auto.value="";auto.textContent="Automatic best voice";select.append(auto);
  const relevant=availableVoices.filter(v=>v.lang.toLowerCase().startsWith(voiceLanguage.slice(0,2)));
  relevant.forEach(v=>{const option=document.createElement("option");option.value=v.voiceURI;option.textContent=v.name+" ("+v.lang+")";select.append(option)});
- if(relevant.some(v=>v.voiceURI===prior))select.value=prior;
- const selected=bestVoice();
- $("voiceInfo").textContent=selected?"Selected: "+selected.name+" · "+selected.lang:(voiceLanguage==="hi-IN"?"इस मोबाइल में Hindi voice नहीं मिली। Android में Hindi Text-to-Speech voice install करें।":"इस भाषा की voice नहीं मिली; browser default voice उपयोग होगी।");
+ select.value=relevant.some(v=>v.voiceURI===prior)?prior:"";
+ if(Number.isFinite(Number(pref.rate))&&pref.rate>=0.75&&pref.rate<=1.10)$("speechRate").value=String(pref.rate);
+ $("speechRateLabel").textContent=Number($("speechRate").value||0.90).toFixed(2)+"×";
+ const selected=bestVoice(voiceLanguage);
+ $("voiceInfo").textContent=selected?"Selected: "+selected.name+" · "+selected.lang+" · सेटिंग सेव रहेगी":(voiceLanguage==="hi-IN"?"इस मोबाइल में Hindi voice नहीं मिली। Android Settings में Text-to-speech output खोलकर Hindi voice data install करें।":"इस भाषा की voice नहीं मिली; browser default voice उपयोग होगी।");
+}
+function detectSpeechLanguage(text){
+ const value=String(text||"");
+ const dev=(value.match(/[\u0900-\u097F]/g)||[]).length;
+ const latin=(value.match(/[A-Za-z]/g)||[]).length;
+ if(dev>=4&&dev>=latin*0.4)return "hi-IN";
+ if(latin>=10&&dev<3)return "en-IN";
+ return voiceLanguage;
+}
+function prepareSpeechText(text){
+ return String(text||"")
+  .replace(/\r/g," ")
+  .replace(/```[\s\S]*?```/g," ")
+  .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,"$1")
+  .replace(/https?:\/\/\S+/g," ")
+  .replace(/^\s{0,3}#{1,6}\s*/gm,"")
+  .replace(/^\s*[-*+]\s+/gm,"")
+  .replace(/^\s*\d+[.)]\s+/gm,"")
+  .replace(/[•●▪]/g,", ")
+  .replace(/[*_~`]/g,"")
+  .replace(/\n{2,}/g,"। ")
+  .replace(/\n/g,", ")
+  .replace(/\s+([,.;!?।])/g,"$1")
+  .replace(/([,;])(?=\S)/g,"$1 ")
+  .replace(/\s{2,}/g," ")
+  .trim()
+  .slice(0,5000);
+}
+function makeSpeechChunks(text,maxLength=220){
+ const sentences=String(text).match(/[^।.!?]+[।.!?]?/g)||[String(text)];
+ const chunks=[];let current="";
+ for(const raw of sentences){
+  const part=raw.trim();if(!part)continue;
+  if((current?current+" ":"").length+part.length<=maxLength){current=(current?current+" ":"")+part;continue}
+  if(current){chunks.push(current);current=""}
+  let rest=part;
+  while(rest.length>maxLength){
+   let cut=rest.lastIndexOf(" ",maxLength);
+   if(cut<80)cut=maxLength;
+   chunks.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim();
+  }
+  current=rest;
+ }
+ if(current)chunks.push(current);
+ return chunks;
+}
+function playNextSpeechChunk(runId,language,voice,rate){
+ if(runId!==speechRunId)return;
+ const part=speechQueue.shift();
+ if(!part){setStatus("मोबाइल असिस्टेंट तैयार");return}
+ const utterance=new SpeechSynthesisUtterance(part);
+ utterance.lang=language;utterance.rate=rate;utterance.pitch=1.02;
+ if(voice)utterance.voice=voice;
+ utterance.onstart=()=>setStatus("JARVIS जवाब दे रहा है…");
+ utterance.onend=()=>playNextSpeechChunk(runId,language,voice,rate);
+ utterance.onerror=event=>{
+  if(runId!==speechRunId)return;
+  speechQueue=[];
+  setStatus(event.error==="interrupted"?"आवाज़ रोक दी गई।":"आवाज़ चलाने में समस्या—Android Text-to-speech settings जाँचें");
+ };
+ window.speechSynthesis.speak(utterance);
 }
 function speak(text){
  if(!("speechSynthesis" in window)){$("voiceCaption").textContent="इस browser में आवाज़ में जवाब उपलब्ध नहीं है।";return}
+ const clean=prepareSpeechText(text);
+ if(!clean)return;
+ speechRunId++;const runId=speechRunId;
+ speechQueue=makeSpeechChunks(clean);
  window.speechSynthesis.cancel();
- const clean=String(text).replace(/\r/g,"").replace(/[•●]/g,", ").replace(/\n{2,}/g,". ").replace(/\n/g,", ").trim().slice(0,3500);
- const u=new SpeechSynthesisUtterance(clean);
- u.lang=voiceLanguage;
- u.rate=Number($("speechRate")?.value||0.90);
- u.pitch=1.02;
- const voice=bestVoice();if(voice)u.voice=voice;
- u.onstart=()=>setStatus("JARVIS जवाब दे रहा है…");
- u.onend=()=>setStatus("मोबाइल असिस्टेंट तैयार");
- u.onerror=()=>setStatus("आवाज़ चलाने में समस्या—Voice settings जाँचें");
- window.speechSynthesis.speak(u);
+ const language=detectSpeechLanguage(clean);
+ const pref=voicePreferences[language]||{};
+ const rate=Number(pref.rate||(language===voiceLanguage?$("speechRate").value:0.90)||0.90);
+ const voice=bestVoice(language);
+ window.setTimeout(()=>playNextSpeechChunk(runId,language,voice,rate),80);
 }
 try{if(window.speechSynthesis&&typeof window.speechSynthesis.getVoices==="function")window.speechSynthesis.getVoices()}catch(e){console.warn("Voice list unavailable:",e)}
 function addMessage(text,who){const el=document.createElement("div");el.className="msg "+who;el.textContent=text;$("messages").appendChild(el);$("messages").scrollTop=$("messages").scrollHeight;return el}
@@ -143,6 +223,7 @@ $("personalTab").onclick=()=>{ $("personalPanel").classList.remove("hidden");$("
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 let activeRecognition=null;
 function setVoiceLanguage(lang){
+ saveVoicePreferences();
  voiceLanguage=lang;
  $("langHi").setAttribute("aria-pressed",String(lang==="hi-IN"));
  $("langEn").setAttribute("aria-pressed",String(lang==="en-IN"));
@@ -151,6 +232,7 @@ function setVoiceLanguage(lang){
 }
 // Bind controls defensively; delegated handlers remain available if direct binding fails.
 function stopJarvisSpeech(){
+ speechRunId++;speechQueue=[];
  try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(e){console.warn("Speech stop:",e)}
  setStatus("मोबाइल असिस्टेंट तैयार");
 }
@@ -183,8 +265,8 @@ $("voiceBtn").addEventListener("click",()=>{
  };
  try{rec.start()}catch(e){activeRecognition=null;$("voiceBtn").classList.remove("listening");$("voiceCaption").textContent="माइक दोबारा दबाकर प्रयास करें।"}
 });
-$("voiceSelect").addEventListener("change",()=>{if(window.speechSynthesis)window.speechSynthesis.cancel();refreshVoiceOptions()});
-$("speechRate").addEventListener("input",()=>{$("speechRateLabel").textContent=Number($("speechRate").value).toFixed(2)+"×"});
+$("voiceSelect").addEventListener("change",()=>{if(window.speechSynthesis)window.speechSynthesis.cancel();saveVoicePreferences();refreshVoiceOptions()});
+$("speechRate").addEventListener("input",()=>{$("speechRateLabel").textContent=Number($("speechRate").value).toFixed(2)+"×";saveVoicePreferences()});
 $("refreshVoices").addEventListener("click",refreshVoiceOptions);
 if("speechSynthesis" in window){refreshVoiceOptions();window.speechSynthesis.onvoiceschanged=refreshVoiceOptions;setTimeout(refreshVoiceOptions,800)}
 $("testVoice").addEventListener("click",()=>speak(voiceLanguage==="hi-IN"?"नमस्ते! मैं आमना जार्विस हूँ। मैं आपकी सहायता के लिए तैयार हूँ। कृपया अपना सवाल बताइए।":"Hello! I am AMNA JARVIS. I am ready to help you."));
