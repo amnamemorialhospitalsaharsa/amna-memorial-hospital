@@ -1,4 +1,4 @@
-const CACHE_NAME = "amna-jarvis-v6";
+const CACHE_NAME = "amna-jarvis-v7";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
