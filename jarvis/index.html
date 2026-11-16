@@ -51,6 +51,26 @@ footer{text-align:center;color:#7694a4;font-size:11px;padding:14px}
 <p class="notice">यह जानकारी देने वाला सहायक है, डॉक्टर का विकल्प नहीं। Emergency में सीधे अस्पताल से संपर्क करें। Patient की निजी medical जानकारी यहाँ दर्ज न करें।</p>
 </section>
 <section id="personalPanel" class="hidden">
+<div class="card">
+<h2>⚡ JARVIS Free Command Center</h2>
+<p class="hint">बिना paid API के चलने वाले personal commands। आपका डेटा इसी मोबाइल में रहेगा।</p>
+<div class="quick">
+<button class="action" type="button" data-localcmd="आज के काम">📋 आज के काम</button>
+<button class="action" type="button" data-localcmd="मेरी यादें">🧠 मेरी यादें</button>
+<button class="action" type="button" data-localcmd="आज की तारीख बताओ">📅 आज की तारीख</button>
+<button class="action" type="button" data-localcmd="समय बताओ">🕘 अभी का समय</button>
+</div>
+<form class="composer" id="localCommandForm" style="margin-top:10px">
+<input class="field" id="localCommand" maxlength="300" placeholder="जैसे: काम जोड़ो रिपोर्ट बनाना…" autocomplete="off" required>
+<button class="send" type="submit">चलाएँ</button>
+</form>
+<div id="localCommandReply" class="msg bot" style="margin-top:10px">नमस्ते! मैं आपके Notes, Memory और To-do में मदद कर सकता हूँ।</div>
+<div class="actions">
+<button class="smallbtn" id="backupData" type="button">⬇️ डेटा Backup</button>
+<button class="smallbtn" id="restoreData" type="button">⬆️ Backup Restore</button>
+<input id="restoreFile" type="file" accept="application/json,.json" class="hidden">
+</div>
+</div>
 <div class="card"><h2>🧠 Personal Memory</h2><p class="hint">महत्वपूर्ण बातें, पसंद और निजी नोट्स इस मोबाइल में सेव करें। अभी cloud sync चालू नहीं है।</p><form class="composer" id="memoryForm"><input class="field" id="memoryInput" maxlength="500" placeholder="याद रखने वाली बात लिखें…" required><button class="send" type="submit">सेव</button></form><div id="memoryList" style="margin-top:12px"></div></div>
 <div class="card"><h2>⏰ Daily Reminder</h2><p class="hint">समय पर सूचना पाने के लिए Notification अनुमति दें। ऐप बंद रहने पर सामान्य browser reminder की गारंटी नहीं होती।</p><button class="smallbtn" id="enableNotifications" type="button">🔔 Notifications चालू करें</button><div id="notifyStatus" class="hint" style="margin-top:8px">Notification अनुमति जाँची नहीं गई है।</div><form id="reminderForm" style="display:grid;gap:8px;margin-top:10px"><input class="field" id="reminderText" maxlength="180" placeholder="Reminder का नाम…" required><input class="field" id="reminderDate" type="datetime-local" required><button class="send" type="submit" style="padding:12px">Reminder जोड़ें</button></form><div id="reminderList" style="margin-top:12px"></div></div>
 <div class="card"><h2>📝 मेरी To-do List</h2><form class="composer" id="todoForm"><input class="field" id="todoInput" maxlength="180" placeholder="नया काम लिखें…" required><button class="send" type="submit">जोड़ें</button></form><div id="todoList" style="margin-top:12px"></div><div class="actions"><button class="smallbtn" id="clearDone" type="button">पूरे हुए काम हटाएँ</button></div></div>
@@ -224,6 +244,61 @@ function checkJarvisReminders(){
  }
  if(changed)writeStore("amna_jarvis_reminders",items);
 }
+
+function localReply(message){
+ const box=$("localCommandReply");box.textContent=message;speak(message);
+}
+function runLocalCommand(raw){
+ const q=String(raw||"").trim();if(!q)return;
+ const lower=q.toLowerCase();
+ if(/^(आज के काम|मेरे काम|my tasks)$/.test(q)){
+  const tasks=getTodos().filter(x=>!x.done);
+  localReply(tasks.length?"आपके "+tasks.length+" काम बाकी हैं: "+tasks.slice(0,5).map(x=>x.text).join("। "):"आपकी To-do list में कोई बाकी काम नहीं है।");
+  return;
+ }
+ if(/^(मेरी यादें|यादें दिखाओ|my memories)$/.test(q)){
+  const memories=readStore("amna_jarvis_memory");
+  localReply(memories.length?"आपकी सेव की गई यादें: "+memories.slice(0,5).map(x=>x.text).join("। "):"अभी कोई Memory सेव नहीं है।");
+  return;
+ }
+ if(/समय बताओ|अभी का समय|what time/i.test(q)){
+  localReply("अभी समय है "+new Date().toLocaleTimeString("hi-IN",{hour:"numeric",minute:"2-digit"}));return;
+ }
+ if(/तारीख बताओ|आज की तारीख|today's date/i.test(q)){
+  localReply("आज "+new Date().toLocaleDateString("hi-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));return;
+ }
+ const remember=q.match(/^(?:याद रखो|याद रखना|remember)\s*[:,-]?\s*(.+)$/i);
+ if(remember){
+  const a=readStore("amna_jarvis_memory");a.unshift({text:remember[1].trim(),createdAt:new Date().toISOString()});writeStore("amna_jarvis_memory",a);renderMemory();localReply("ठीक है, मैंने यह बात इस मोबाइल की JARVIS Memory में सेव कर दी: "+remember[1]);return;
+ }
+ const task=q.match(/^(?:काम जोड़ो|टास्क जोड़ो|add task)\s*[:,-]?\s*(.+)$/i);
+ if(task){
+  const a=getTodos();a.unshift({text:task[1].trim(),done:false});saveTodos(a);localReply("To-do में काम जोड़ दिया: "+task[1]);return;
+ }
+ localReply("यह command अभी उपलब्ध नहीं है। आप 'काम जोड़ो …' या 'याद रखो …' लिख सकते हैं।");
+}
+$("localCommandForm").addEventListener("submit",e=>{e.preventDefault();runLocalCommand($("localCommand").value);$("localCommand").value=""});
+document.querySelectorAll("[data-localcmd]").forEach(b=>b.addEventListener("click",()=>runLocalCommand(b.dataset.localcmd)));
+function downloadJarvisBackup(){
+ const keys=["amna_jarvis_todos","amna_jarvis_memory","amna_jarvis_reminders"];
+ const data={app:"AMNA JARVIS",version:7,exportedAt:new Date().toISOString(),data:{}};
+ keys.forEach(k=>{data.data[k]=readStore(k)});
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="amna-jarvis-backup.json";link.click();URL.revokeObjectURL(url);
+ $("localCommandReply").textContent="Backup file तैयार है। इसे सुरक्षित जगह रखें।";
+}
+$("backupData").addEventListener("click",downloadJarvisBackup);
+$("restoreData").addEventListener("click",()=>$("restoreFile").click());
+$("restoreFile").addEventListener("change",async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ try{
+  const parsed=JSON.parse(await file.text());if(!parsed.data||typeof parsed.data!=="object")throw new Error("Invalid backup");
+  ["amna_jarvis_todos","amna_jarvis_memory","amna_jarvis_reminders"].forEach(k=>{if(Array.isArray(parsed.data[k]))writeStore(k,parsed.data[k])});
+  renderTodos();renderMemory();renderReminders();localReply("Backup restore हो गया। कृपया अपनी जानकारी जाँच लें।");
+ }catch(err){$("localCommandReply").textContent="Backup file सही नहीं है। पुरानी जानकारी सुरक्षित रखी गई है।"}
+ e.target.value="";
+});
+
 renderMemory();renderReminders();checkJarvisReminders();setInterval(checkJarvisReminders,15000);
 if("serviceWorker" in navigator && location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").then(()=>checkJarvisReminders()).catch(console.warn);
 </script>
